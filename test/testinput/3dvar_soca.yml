@@ -5,22 +5,25 @@
 #
 # ---|-----------|-----------|-----------|-----------|-----------|-----------|
 #    |                                   |                                   |      
-# window_begin: 2018-04-14T21:00:00Z     |                           2015-04-15T3:00:00Z
+# window_begin: 2018-04-14T00:00:00Z     |                           2018-04-16T00:00:00Z
 #                                        |
 #                       bkg/ana/incr: 2018-04-15T00:00:00Z
 #
 #
 
 test_framework_runtime_config: "--log_level=test_suite"
+
 resolution:
-  num_ice_cat: 5
+  num_ice_cat: 5   
   num_ice_lev: 4
   num_sno_lev: 1
+
 model:
   name: SOCA
   tstep: PT1H
   advance_mom6: 0
   variables: &soca_vars [cicen, hicen, socn, tocn, ssh, hocn]  
+
 cost_function:
   cost_type: 3D-Var
   window_begin: &date_begin 2018-04-14T00:00:00Z
@@ -34,7 +37,10 @@ cost_function:
         ocn_filename: MOM.res.nc
         ice_filename: ice_model.res.nc
         date: &bkg_date 2018-04-15T00:00:00Z
+
+    # Setup of B-matrix
     Covariance:
+      # Horizontal correlation operator from BUMP
       covariance: SocaError
       prefix: soca
       datadir: ./bump
@@ -43,6 +49,9 @@ cost_function:
       lsqrt: 1
       mpicom: 2
       date: 2018-04-15T00:00:00Z
+
+      # Diagonal standard deviation of the background error
+      # Filtering of the diag 
       variable_changes:
       - varchange: BkgErrFILT
         ocean_depth_min: 1000 # [m]
@@ -54,6 +63,7 @@ cost_function:
           variables: *soca_vars
         outputVariables:
           variables: *soca_vars
+      # Read in background error
       - varchange: BkgErrSOCA
         read_from_file: 3
         basename: ./
@@ -78,6 +88,8 @@ cost_function:
           variables: *soca_vars
         outputVariables:
           variables: *soca_vars
+
+        # Vertical convolution
       - varchange: VertConvSOCA
         variables:                                
           variables: *soca_vars
@@ -89,6 +101,8 @@ cost_function:
           variables: *soca_vars
         outputVariables:
           variables: *soca_vars
+
+        # Physical balances between ssh/t/s/ice  
       - varchange: BalanceSOCA
         dsdtmax: 0.1
         dsdzmin: 3.0e-6
@@ -99,8 +113,11 @@ cost_function:
         outputVariables:
           variables: *soca_vars
 
+  # Cost function
   Jo:
     ObsTypes:
+
+    # Absolute dynamic topography
     - ObsType: ADT
       ObsData:
         ObsDataOut:
@@ -109,71 +126,73 @@ cost_function:
           obsfile: ./Data/Jason-2-2018-04-15.nc
       Covariance:
         covariance: diagonal
-#      ObsFilters:
-#      - Filter: Background Check
-#        variables:
-#        - obs_absolute_dynamic_topography
-#        threshold: 3
-#      - Filter: GOMsaver
-#        filename: ./Data/testgeovl.nc
-#    - ObsType: InsituTemperature
-#      ObsData:
-#        ObsDataOut:
-#          obsfile: ./Data/profile_2018-04-15-out.nc
-#        ObsDataIn:
-#          obsfile: ./Data/profile_2018-04-15.nc
-#          #obsfile: /home/gvernier/Data/FNMOC/2018041500.profile.nc
-#      Covariance:
-#        covariance: diagonal
-#      ObsFilters:
-#      - Filter: Background Check
-#        variables:
-#        - sea_water_temperature
-#        threshold: 3
-#    - ObsType: SeaIceFraction
-#      ObsData:
-#        ObsDataOut:
-#          obsfile: ./Data/icec-2018-04-15-soca-out.nc
-#        ObsDataIn:
-#          obsfile: ./Data/icec-2018-04-15.nc
-#      Covariance:
-#        covariance: diagonal
-#      ObsFilters:
-#      - Filter: Background Check
-#        variables:
-#        - obs_sea_ice_concentration
-#        threshold: 3
-#    - ObsType: SeaIceThickness
-#      ObsData:
-#        ObsDataOut:
-#          obsfile: ./Data/cryosat2-2018-04-15-soca-out.nc
-#        ObsDataIn:
-#          obsfile: ./Data/cryosat2-2018-04-15.nc
-#      Covariance:
-#        covariance: diagonal
-#      ObsFilters:
-#      - Filter: Background Check
-#        variables:
-#        - obs_sea_ice_thickness
-#        threshold: 3
-#    - ObsType: SeaSurfaceTemp
-#      ObsData:
-#        ObsDataOut:
-#          obsfile: ./Data/sst_obs-2018-04-15-soca-out.nc
-#        ObsDataIn:
-#          obsfile: ./Data/sst_obs-2018-04-15.nc4
-#      Covariance:
-#        covariance: diagonal
-#      variables:
-#      - sea_surface_temperature
-#      ObsFilters:
-#      - Filter: Background Check
-#        variables:
-#        - sea_surface_temperature
-#        threshold: 3
+      ObsFilters:
+      - Filter: Background Check
+        variables:
+        - obs_absolute_dynamic_topography
+        threshold: 3
+      - Filter: GOMsaver
+        filename: ./Data/testgeovl.nc
 
+    # Profiles of temperature
+    - ObsType: InsituTemperature
+      ObsData:
+        ObsDataOut:
+          obsfile: ./Data/profile_2018-04-15-out.nc
+        ObsDataIn:
+          obsfile: ./Data/profile_2018-04-15.nc
+      Covariance:
+        covariance: diagonal
+
+    # Profiles of salinity (nos salinity in git-lfs)
+    #- ObsType: InsituSalinity
+    #  ObsData:
+    #    ObsDataOut:
+    #      obsfile: ./Data/profile_2018-04-15-out.nc
+    #    ObsDataIn:
+    #      obsfile: ./Data/linktoiodafile.nc
+    #  Covariance:
+    #    covariance: diagonal
+    #  variable:
+    #  - sea_water_salinity
+        
+    # Sea-icce fraction
+    - ObsType: SeaIceFraction
+      ObsData:
+        ObsDataOut:
+          obsfile: ./Data/icec-2018-04-15-soca-out.nc
+        ObsDataIn:
+          obsfile: ./Data/icec-2018-04-15.nc
+      Covariance:
+        covariance: diagonal
+
+    # SST
+    - ObsType: SeaSurfaceTemp
+      ObsData:
+        ObsDataOut:
+          obsfile: ./Data/sst_obs-2018-04-15-soca-out.nc
+        ObsDataIn:
+          obsfile: ./Data/sst_obs-2018-04-15.nc4
+      Covariance:
+        covariance: diagonal
+      variables:
+      - sea_surface_temperature
+
+    # SSS (No sss retreivals in git-lfs)
+    #- ObsType: SeaSurfaceSalinity
+    #  ObsData:
+    #    ObsDataOut:
+    #      obsfile: ./Data/sst_obs-2018-04-15-soca-out.nc
+    #    ObsDataIn:
+    #      obsfile: ./Data/sst_obs-2018-04-15.nc4
+    #  Covariance:
+    #    covariance: diagonal
+    #  variables:
+    #  - sea_surface_salinity
+        
 variational:
   iteration:
+  # Outer loop #1
   - resolution:
       num_ice_cat: 5
       num_ice_lev: 4
@@ -183,30 +202,16 @@ variational:
       version: IdTLM
       tstep: PT1H
       variables: *soca_vars
-    ninner: 1
+    ninner: 50
     gradient_norm_reduction: 1e-15
     test: 'on'
     prints:
     diagnostics:
       departures: ombg
-#  - resolution:
-#      num_ice_cat: 5
-#      num_ice_lev: 4
-#      num_sno_lev: 1
-#    linearmodel:
-#      varchange: Identity      
-#      version: IdTLM
-#      tstep: PT1H
-#      variables: [cicen, hicen, socn, tocn, ssh, hocn]
-#    ninner: 15
-#    gradient_norm_reduction: 1e-15
-#    test: 'on'
-#    output:
-#      datadir: Data
-#      exp: 3dvar
-#      type: incr
 
 minimizer:
+  # Observation space minimization
+  # Restricted Preconditioned Conjugate Gradient (RPCG)
   algorithm: RPCG
 
 output:
