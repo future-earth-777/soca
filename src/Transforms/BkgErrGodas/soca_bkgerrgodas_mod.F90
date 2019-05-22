@@ -81,7 +81,8 @@ contains
     ! to 10% of the background for now ...
     call self%std_bkgerr%ocnsfc%copy(bkg%ocnsfc)
     call self%std_bkgerr%ocnsfc%mul(0.1_kind_real)
-    
+    self%std_bkgerr%ocnsfc%fric_vel = 0.0_kind_real
+
     ! Apply config bounds to background error
     call self%bounds%apply(self%std_bkgerr)
 
