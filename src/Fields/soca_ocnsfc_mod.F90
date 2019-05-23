@@ -238,7 +238,7 @@ contains
     self%latent_heat = - real(fluxes%latent, kind=kind_real)
     self%sens_heat   = - real(fluxes%sens, kind=kind_real)
     self%fric_vel    = real(fluxes%ustar, kind=kind_real)
-    
+    !self%fric_vel    = real(0.08, kind=kind_real)
   end subroutine soca_ocnsfc_getforcing
 
   ! ------------------------------------------------------------------------------  
