@@ -116,6 +116,8 @@ cost_function:
         name: CoolSkin
         ObsDataOut: {obsfile: ./Data/sst.out.nc}
         ObsDataIn:  {obsfile: ./Data/gmi_sst_20180415.nc}    #sst.nc}
+        simulate:
+          variables: [sea_surface_temperature]
       ObsOperator:
         name: CoolSkin
       Covariance:
