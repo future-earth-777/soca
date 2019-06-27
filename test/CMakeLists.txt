@@ -25,6 +25,7 @@ list( APPEND soca_test_input
   testinput/model_test.yml
   testinput/parameters_bump_cov_lct.yml
   testinput/parameters_bump_cov_nicas.yml
+  testinput/parameters_bump_cor_nicas.yml
   testinput/state_test.yml
   testinput/static_SocaError_init.yml
   testinput/static_SocaError_test.yml
@@ -50,6 +51,7 @@ list( APPEND soca_test_output
   testoutput/hofx3d.test
   testoutput/parameters_bump_cov_lct.test
   testoutput/parameters_bump_cov_nicas.test
+  testoutput/parameters_bump_cor_nicas.test  
 )
 
 list( APPEND soca_model_param
@@ -304,7 +306,7 @@ ecbuild_add_test( TARGET test_soca_ensvariance
 # The following two tests are slow, how can we speed it up?
 # Use another model grid configuration with even fewer grid cells?
 ecbuild_add_test( TARGET test_soca_parameters_bump_cov_lct
-                  ENABLED OFF
+                  ENABLED ON
                   MPI ${MPI_SOCA_TESTS}
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
@@ -314,7 +316,7 @@ ecbuild_add_test( TARGET test_soca_parameters_bump_cov_lct
                   DEPENDS soca_parameters.x)
 
 ecbuild_add_test( TARGET test_soca_parameters_bump_cov_nicas
-                  ENABLED OFF
+                  ENABLED ON
                   MPI ${MPI_SOCA_TESTS}
                   TYPE SCRIPT
                   COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
@@ -323,6 +325,16 @@ ecbuild_add_test( TARGET test_soca_parameters_bump_cov_nicas
                        testoutput/parameters_bump_cov_nicas.test
                   DEPENDS soca_parameters.x)
 
+ecbuild_add_test( TARGET test_soca_parameters_bump_cor_nicas
+                  ENABLED ON
+                  MPI ${MPI_SOCA_TESTS}
+                  TYPE SCRIPT
+                  COMMAND ${CMAKE_BINARY_DIR}/bin/compare.sh
+                  ARGS "${CMAKE_BINARY_DIR}/bin/soca_parameters.x
+                       testinput/parameters_bump_cor_nicas.yml"
+                       testoutput/parameters_bump_cor_nicas.test
+                  DEPENDS soca_parameters.x)
+		
 ecbuild_add_test( TARGET test_soca_dirac_bump_cov
                   ENABLED OFF
                   MPI ${MPI_SOCA_TESTS}
