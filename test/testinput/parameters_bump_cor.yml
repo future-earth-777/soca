@@ -1,0 +1,95 @@
+test_framework_runtime_config: --log_level=test_suite
+resolution:
+  num_ice_cat: 5
+  num_ice_lev: 4
+  num_sno_lev: 1
+
+variables: &soca_vars [cicen, hicen, hsnon, socn, tocn, ssh, hocn]
+
+date: '2018-04-14T21:00:00Z'
+
+background:
+  read_from_file: 1
+  date: &date 2018-04-15T00:00:00Z
+  basename: ./INPUT/
+  ocn_filename: MOM.res.nc
+  ice_filename: ice_model.res.nc
+  variables: *soca_vars
+
+bump:
+  prefix: bumpparameters_cor_
+  datadir: ./bump
+  method: cor
+  nonunit_diag: 1
+  strategy: specific_univariate
+  new_nicas: 1
+  ntry: 3
+  nrep: 2
+  lsqrt: 1
+  resol: 6
+  network: 0
+  mpicom: 2
+  default_seed: 1
+# Forced length-scales
+# --------------------
+  forced_radii: 1
+  rh: 2500000.0
+  rv: 0.3
+# Diagnostic based on ens
+# -----------------------
+  new_hdiag: 0
+  nc1: 2000
+  nc2: 500
+  nc3: 15
+  dc: 200000.0
+  nl0r: 11
+  ne: 5
+  #local_diag: 1
+  #local_rad: 1000000
+  minim_algo: hooke
+  #diag_rhflt: 3000000
+# Variance filter
+# ---------------
+#  var_filter: 1
+#  var_niter: 10
+#  var_rhflt: 1000000.0
+#  Dirac gridded output
+#  --------------------
+#  load_nicas: 1
+  check_dirac: 0
+  ndir: 1
+  londir: [0.0]
+  latdir: [0.0]
+  levdir: [50]
+  ivdir: [1]
+  itsdir: [1]
+  grid_output: 1
+  grid_resol: 200000.0
+#output:
+#- parameter: var
+#  filetype: gfs
+#  datapath_tile: Data/bump/
+#  filename_core: bumpparameters_cor_gfs.var.fv_core.res.nc
+#  filename_trcr: bumpparameters_cor_gfs.var.fv_tracer.res.nc
+#  filename_sfcd: bumpparameters_cor_gfs.var.sfc_data.nc
+#  filename_sfcw: bumpparameters_cor_gfs.var.fv_srf_wnd.res.nc
+#  filename_cplr: bumpparameters_cor_gfs.var.coupler.res
+#  date: '2018-04-14T21:00:00Z'
+#- parameter: cor_rh
+#  filetype: gfs
+#  datapath_tile: Data/bump/
+#  filename_core: bumpparameters_cor_gfs.cor_rh.fv_core.res.nc
+#  filename_trcr: bumpparameters_cor_gfs.cor_rh.fv_tracer.res.nc
+#  filename_sfcd: bumpparameters_cor_gfs.cor_rh.sfc_data.nc
+#  filename_sfcw: bumpparameters_cor_gfs.cor_rh.fv_srf_wnd.res.nc
+#  filename_cplr: bumpparameters_cor_gfs.cor_rh.coupler.res
+#  date: '2018-04-14T21:00:00Z'
+#- parameter: cor_rv
+#  filetype: gfs
+#  datapath_tile: Data/bump/
+#  filename_core: bumpparameters_cor_gfs.cor_rv.fv_core.res.nc
+#  filename_trcr: bumpparameters_cor_gfs.cor_rv.fv_tracer.res.nc
+#  filename_sfcd: bumpparameters_cor_gfs.cor_rv.sfc_data.nc
+#  filename_sfcw: bumpparameters_cor_gfs.cor_rv.fv_srf_wnd.res.nc
+#  filename_cplr: bumpparameters_cor_gfs.cor_rv.coupler.res
+#  date: '2018-04-14T21:00:00Z'
