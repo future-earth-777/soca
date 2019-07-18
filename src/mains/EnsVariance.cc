@@ -5,13 +5,13 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 #include "soca/Traits.h"
-#include "soca/Transforms/instantiateBalanceOpFactory.h"
+#include "soca/Transforms/instantiateLinearTransformFactory.h"
 #include "oops/runs/EnsVariance.h"
 #include "soca/Run/Run.h"
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  soca::instantiateBalanceOpFactory();
+  soca::instantiateLinearTransformFactory();
   oops::EnsVariance<soca::Traits> ensvariance;
   run.execute(ensvariance);
   return 0;

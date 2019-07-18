@@ -7,12 +7,12 @@
 
 #include "soca/Traits.h"
 #include "soca/Run/Run.h"
-#include "soca/Transforms/instantiateBalanceOpFactory.h"
+#include "soca/Transforms/instantiateLinearTransformFactory.h"
 #include "test/interface/LinearVariableChange.h"
 
 int main(int argc,  char ** argv) {
   soca::Run run(argc, argv);
-  soca::instantiateBalanceOpFactory();    
+  soca::instantiateLinearTransformFactory();    
   test::LinearVariableChange<soca::Traits> tests;
   run.execute(tests);
   return 0;

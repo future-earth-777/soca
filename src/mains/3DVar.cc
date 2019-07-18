@@ -9,14 +9,14 @@
  */
 
 #include "soca/Traits.h"
-#include "soca/Transforms/instantiateBalanceOpFactory.h"
+#include "soca/Transforms/instantiateLinearTransformFactory.h"
 #include "soca/instantiateObsFilterFactory.h"
 #include "oops/runs/Variational.h"
 #include "soca/Run/Run.h"
 
 int main(int argc,  char ** argv) {
   soca::Run run(argc, argv);
-  soca::instantiateBalanceOpFactory();
+  soca::instantiateLinearTransformFactory();
   soca::instantiateObsFilterFactory();
   oops::Variational<soca::Traits> var;
   run.execute(var);
