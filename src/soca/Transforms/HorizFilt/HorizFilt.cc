@@ -23,6 +23,7 @@ namespace soca {
                  const Geometry & geom,
                  const eckit::Configuration & conf):
     vars_(conf) {
+    soca_horizfilt_setup_f90();
   }
   // -----------------------------------------------------------------------------
   HorizFilt::~HorizFilt() {

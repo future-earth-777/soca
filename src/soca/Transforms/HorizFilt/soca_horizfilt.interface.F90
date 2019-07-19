@@ -1,4 +1,3 @@
-
 ! (C) Copyright 2009-2016 ECMWF.
 ! 
 ! This software is licensed under the terms of the Apache Licence Version 2.0
@@ -39,7 +38,7 @@ contains
   ! ------------------------------------------------------------------------------
   !> Setup for the filtering operator
   
-  subroutine c_soca_horizconv_setup(c_key_self, c_conf, c_key_geom, c_key_bkg, c_vars) &
+  subroutine c_soca_horizfilt_setup(c_key_self, c_conf, c_key_geom, c_key_bkg, c_vars) &
        & bind (c,name='soca_horizfilt_setup_f90')
     integer(c_int), intent(inout) :: c_key_self   !< The filtering structure
     type(c_ptr),       intent(in) :: c_conf       !< The configuration
@@ -60,12 +59,12 @@ contains
     call oops_vars_create(c_vars, vars)
     call soca_horizfilt_setup(self, c_conf, geom, bkg, vars)
 
-  end subroutine c_soca_horizconv_setup
+  end subroutine c_soca_horizfilt_setup
 
   ! ------------------------------------------------------------------------------
   !> Delete filtering operator
 
-  subroutine c_soca_horizconv_delete(c_key_self) bind (c,name='soca_horizfilt_delete_f90')
+  subroutine c_soca_horizfilt_delete(c_key_self) bind (c,name='soca_horizfilt_delete_f90')
     integer(c_int), intent(inout) :: c_key_self  !< The filtering structure
 
     type(soca_horizfilt_type),       pointer :: self
@@ -74,13 +73,13 @@ contains
     call soca_horizfilt_delete(self)
     call soca_horizfilt_registry%remove(c_key_self)
 
-  end subroutine c_soca_horizconv_delete
+  end subroutine c_soca_horizfilt_delete
 
   ! ------------------------------------------------------------------------------
 
   !> Multiply
 
-  subroutine c_soca_horizconv_mult(c_key_self, c_key_in, c_key_out) bind(c,name='soca_horizfilt_mult_f90')  
+  subroutine c_soca_horizfilt_mult(c_key_self, c_key_in, c_key_out) bind(c,name='soca_horizfilt_mult_f90')  
     integer(c_int), intent(inout) :: c_key_self  !< The filtering structure
     integer(c_int), intent(in)    :: c_key_in    !<    "   to Increment in
     integer(c_int), intent(in)    :: c_key_out   !<    "   to Increment out 
@@ -96,6 +95,6 @@ contains
     call copy(xout,xin)              !< xout = xin
     call soca_horizfilt_mult(self, xout) !< xout = C.xout
 
-  end subroutine c_soca_horizconv_mult
+  end subroutine c_soca_horizfilt_mult
 
 end module c_soca_horizfilt_mod
