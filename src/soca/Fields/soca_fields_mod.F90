@@ -20,7 +20,7 @@ module soca_fields
   use iso_c_binding
   use kinds
   use MOM_remapping,       only : remapping_CS, initialize_remapping, remapping_core_h, end_remapping
-  use mpp_domains_mod, only : mpp_update_domains
+  use mpp_domains_mod, only : mpp_update_domains, mpp_update_domains_ad
   use random_mod
   use soca_fieldsutils_mod
   use soca_geom_mod_c
@@ -612,6 +612,15 @@ contains
     integer :: i, j, k, nl, nz
     type(remapping_CS)  :: remapCS
 
+    real(kind=kind_real), allocatable :: dx1(:,:,:)
+    real(kind=kind_real), allocatable :: dx2(:,:,:)
+    real(kind=kind_real), allocatable ::mdx1(:,:,:)
+    real(kind=kind_real), allocatable ::mdx2(:,:,:)
+    real(kind=kind_real) :: sum1, sum2, local_sum
+    integer :: rseed=1, myrank
+    type(fckit_mpi_comm) :: f_comm
+    f_comm = fckit_mpi_comm()
+    
     ! Set default iread to 0
     iread = 0
     if (config_element_exists(c_conf,"read_from_file")) then
@@ -722,10 +731,55 @@ contains
        end if
        call end_remapping(remapCS)
 
+       isd = fld%geom%isd ; ied = fld%geom%ied
+       jsd = fld%geom%jsd ; jed = fld%geom%jed
+
+       nz=size(fld%tocn, dim=3)
+       allocate(dx1(isd:ied,jsd:jed,nz))
+       allocate(dx2(isd:ied,jsd:jed,nz))
+       allocate(mdx1(isd:ied,jsd:jed,nz))
+       allocate(mdx2(isd:ied,jsd:jed,nz))
+       
        ! Update halo
        call mpp_update_domains(fld%tocn, fld%geom%Domain%mpp_domain)
        call mpp_update_domains(fld%socn, fld%geom%Domain%mpp_domain)
        call mpp_update_domains(fld%ssh, fld%geom%Domain%mpp_domain)
+
+       myrank = f_comm%rank()
+       
+       dx1=0;dx2=0;mdx1=0
+
+       call normal_distribution(dx1(isc:iec,jsc:jec,:),  0.0_kind_real, 1.0_kind_real, rseed)
+       mdx1=dx1
+       call mpp_update_domains(mdx1, fld%geom%Domain%mpp_domain, complete=.true.)
+
+       dx2=mdx1
+       call mpp_update_domains_ad(mdx1, fld%geom%Domain%mpp_domain, complete=.true.)
+
+       sum1=0;sum2=0
+       local_sum=0.
+       do k=1,nz
+       do j = jsd, jed
+          do i = isd, ied
+             local_sum=local_sum+dx2(i,j,k)*dx2(i,j,k)
+          enddo
+       enddo
+       enddo
+       call f_comm%allreduce(local_sum, sum1, fckit_mpi_sum())
+   
+       local_sum=0.
+       do k=1,nz
+       do j = jsd, jed
+          do i = isd, ied             
+             local_sum=local_sum+dx1(i,j,k)*mdx1(i,j,k)
+          enddo
+       enddo
+       enddo
+       call f_comm%allreduce(local_sum, sum2, fckit_mpi_sum())
+    
+       print*,'mpp_do_update_ad dot test= ',sum1,sum2,(sum1-sum2)/sum1
+       deallocate(dx1,dx2,mdx1,mdx2)
+       read(*,*)
 
        ! Set vdate if reading state
        if (iread==1) then
