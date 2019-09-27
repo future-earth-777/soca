@@ -118,6 +118,8 @@ class ioda:
         self.omf=[]
         self.obs=[]
         self.obserror=[]
+        self.preqc=[]
+        self.postqc=[]        
         self.lev=[]
         self.varid=[]        
         self.instid=[]
@@ -142,7 +144,7 @@ class ioda:
                         I=np.where(abs(dum)<9999.9)
                         self.omf=np.append(-dum[I],self.omf)
                     
-                    ivar=var+'@oman'                                        
+                    ivar=var+'@oman'
                     dum=get_from_ioda(ncfile,ivar);
                     self.oma = np.append(-dum[I],self.oma)
                     ivar=var+'@ObsValue'
@@ -151,6 +153,12 @@ class ioda:
                     ivar=var+'@ObsError'
                     dum=get_from_ioda(ncfile,ivar);
                     self.obserror = np.append(dum[I],self.obserror)
+                    ivar=var+'@PreQC'
+                    dum=get_from_ioda(ncfile,ivar);
+                    self.preqc = np.append(dum[I],self.preqc)
+                    ivar=var+'@EffectiveQC0'
+                    dum=get_from_ioda(ncfile,ivar);
+                    self.postqc = np.append(dum[I],self.postqc)
 
                     dum=get_from_ioda(ncfile,'longitude@MetaData');
                     self.lon = np.append(dum[I],self.lon)
@@ -193,10 +201,24 @@ class observation_space(object):
         self.X=x
         self.Y=y
         cnt=0
+        alpha=1.0
         for inst in [508, 517, 520]:
+            if (inst == 520 ):
+                alpha = 0.1
+            else:
+                alpha = 1.0
+            print(self.ioda.preqc)
+            print(self.ioda.postqc)
+
+            # Plot obs loc
             I=np.where(self.ioda.instid==inst)
-            self.axis.plot(x[I], y[I], linestyle='None', marker='.', markersize=5, label='myplot',color=COLORS[cnt])
+            self.axis.plot(x[I], y[I], linestyle='None', marker='.', markersize=5, label='myplot',color=COLORS[cnt], alpha=alpha)
             cnt+=1
+
+        # Plot qc'ed obs loc
+        I=np.where((self.ioda.preqc+self.ioda.postqc)>0.)
+        self.axis.plot(x[I], y[I], linestyle='None', marker='.', markersize=5, label='myplot',color='k', alpha=.1)
+            
             
     def _onMotion(self, event):
         collisionFound = False
@@ -357,5 +379,11 @@ if __name__ == '__main__':
     listoffiles = args.input
     dict_inst, dict_varspecs, COLORS = dictionaries()    
     example=observation_space(listoffiles)
+    #titlestr = listoffiles[0]
+    #titlestr = titlestr[34:44]
+    #figname = titlestr[0:4]+'-'+titlestr[4:6]+'-'+titlestr[6:8]+'-'+titlestr[8:]+'z.png'    
+    #titlestr = titlestr[0:4]+'-'+titlestr[4:6]+'-'+titlestr[6:8]+'  '+titlestr[8:]+'z'
+    #plt.title(titlestr, fontsize=18, fontweight='bold')
+    #plt.savefig(figname)
     plt.show()
 
