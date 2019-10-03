@@ -28,6 +28,7 @@ type :: soca_seaice_type
    real(kind=kind_real), allocatable :: vicen(:,:,:) !< Ice volume
    real(kind=kind_real), allocatable :: vsnon(:,:,:) !< Snow volume
    integer :: isd, ied, jsd, jed                 !< Data domain indices
+   integer :: isc, iec, jsc, jec                 !< Data domain indices
    integer :: ncat                               !< Number of categories
    ! TODO: Get densities of ice and snow from config
    real(kind=kind_real) :: soca_rho_ice  = 905.0 !< [kg/m3]
@@ -69,13 +70,19 @@ subroutine soca_seaice_create(self, geom)
   jsd = geom%jsd ; self%jsd = jsd
   jed = geom%jed ; self%jed = jed
 
+  ! Indices for data domain (with halo)
+  self%isc = geom%isc
+  self%iec = geom%iec 
+  self%jsc = geom%jsc
+  self%jec = geom%jec
+  
   ! Get number of categories
   ncat = geom%ncat ; self%ncat = ncat
 
   ! Allocate sea-ice state
-  if (.not.allocated(self%cicen)) allocate(self%cicen(isd:ied,jsd:jed,geom%ice_column%ncat+1))
-  if (.not.allocated(self%hicen)) allocate(self%hicen(isd:ied,jsd:jed,geom%ice_column%ncat))
-  if (.not.allocated(self%hsnon)) allocate(self%hsnon(isd:ied,jsd:jed,geom%ice_column%ncat))
+  if (.not.allocated(self%cicen)) allocate(self%cicen(isd:ied,jsd:jed,1:geom%ice_column%ncat+1))
+  if (.not.allocated(self%hicen)) allocate(self%hicen(isd:ied,jsd:jed,1:geom%ice_column%ncat))
+  if (.not.allocated(self%hsnon)) allocate(self%hsnon(isd:ied,jsd:jed,1:geom%ice_column%ncat))
 
 end subroutine soca_seaice_create
 
@@ -179,15 +186,15 @@ subroutine soca_seaice_add_incr(self, incr)
   ncat = self%ncat
 
   ! Allocate memory for temporary arrays
-  allocate(aice_bkg(isd:ied,jsd:jed))
-  allocate(aice_ana(isd:ied,jsd:jed))
-  allocate(aice_incr(isd:ied,jsd:jed))
-  allocate(alpha(isd:ied,jsd:jed))
+  allocate(aice_bkg(isd:ied,jsd:jed));  aice_bkg(isd:ied,jsd:jed) = 0.0_kind_real 
+  allocate(aice_ana(isd:ied,jsd:jed));  aice_ana(isd:ied,jsd:jed) = 0.0_kind_real 
+  allocate(aice_incr(isd:ied,jsd:jed)); aice_incr(isd:ied,jsd:jed) = 0.0_kind_real 
+  allocate(alpha(isd:ied,jsd:jed));     alpha(isd:ied,jsd:jed) = 0.0_kind_real 
 
   ! Allocate ice and snow volume
   if (.not.(allocated(self%vicen))) then
-     allocate(self%vicen(isd:ied,jsd:jed,1:ncat))
-     allocate(self%vsnon(isd:ied,jsd:jed,1:ncat))
+     allocate(self%vicen(isd:ied,jsd:jed,1:ncat)); self%vicen(isd:ied,jsd:jed,1:ncat) = 0.0_kind_real 
+     allocate(self%vsnon(isd:ied,jsd:jed,1:ncat)); self%vicen(isd:ied,jsd:jed,1:ncat) = 0.0_kind_real 
   end if
 
   ! Compute ice and snow volume
@@ -195,9 +202,9 @@ subroutine soca_seaice_add_incr(self, incr)
   self%vsnon = self%hsnon * self%cicen(:,:,2:)
 
   ! Initialize aggregate fields
-  aice_bkg  = sum(self%cicen(:,:,2:), dim=3)
-  aice_incr = sum(incr%cicen(:,:,2:), dim=3)
-  aice_ana  = aice_bkg + aice_incr
+  aice_bkg(isd:ied,jsd:jed)  = sum(self%cicen(isd:ied,jsd:jed,2:), dim=3)
+  aice_incr(isd:ied,jsd:jed) = sum(incr%cicen(isd:ied,jsd:jed,2:), dim=3)
+  aice_ana(isd:ied,jsd:jed)  = aice_bkg(isd:ied,jsd:jed) + aice_incr(isd:ied,jsd:jed)
 
   ! Fix out of bound values in aggregate ice fraction analysis
   where (aice_ana < 0.0_kind_real)
@@ -223,22 +230,23 @@ subroutine soca_seaice_add_incr(self, incr)
 
   ! Add increment for ice and snow thickness
   ! TODO: check bounds ...
-  self%hicen = self%hicen + incr%hicen
-  self%hsnon = self%hsnon + incr%hsnon
+  !write(55,*)self%hicen(self%isc:self%iec,self%jsc:self%jec,1:ncat)
+!!$  self%hicen(isd:ied,jsd:jed,1:ncat) = self%hicen(isd:ied,jsd:jed,1:ncat) + incr%hicen(isd:ied,jsd:jed,1:ncat)
+!!$  self%hsnon(isd:ied,jsd:jed,1:ncat) = self%hsnon(isd:ied,jsd:jed,1:ncat) + incr%hsnon(isd:ied,jsd:jed,1:ncat)
 
   ! Update ice and snow volume
-  self%vicen = self%hicen * self%cicen(:,:,2:)
-  self%vsnon = self%hsnon * self%cicen(:,:,2:)
+  !self%vicen(isd:ied,jsd:jed,1:ncat) = self%hicen(isd:ied,jsd:jed,1:ncat)! * self%cicen(isd:ied,jsd:jed,2:ncat+1)
+  !self%vsnon(isd:ied,jsd:jed,1:ncat) = self%hsnon(isd:ied,jsd:jed,1:ncat)! * self%cicen(isd:ied,jsd:jed,2:ncat+1)
 
-  ! "Add" fraction increment and update volumes accordingly
-  do k = 1, self%ncat
-     self%cicen(:,:,k+1) = alpha * self%cicen(:,:,k+1)
-     self%vicen(:,:,k) = alpha * self%vicen(:,:,k)
-     self%vsnon(:,:,k) = alpha * self%vsnon(:,:,k)
-  end do
-
-  ! Clean-up memory
-  deallocate(aice_bkg, aice_ana, aice_incr, alpha)
+!!$  ! "Add" fraction increment and update volumes accordingly
+!!$  do k = 1, self%ncat
+!!$     self%cicen(:,:,k+1) = alpha * self%cicen(:,:,k+1)
+!!$     self%vicen(:,:,k) = alpha * self%vicen(:,:,k)
+!!$     self%vsnon(:,:,k) = alpha * self%vsnon(:,:,k)
+!!$  end do
+!!$
+!!$  ! Clean-up memory
+!!$  deallocate(aice_bkg, aice_ana, aice_incr, alpha)
 
 end subroutine soca_seaice_add_incr
 
