@@ -372,6 +372,9 @@ soca_add_test( NAME parameters_bump_loc
 # soca_add_test( NAME dirac_bump_cov
 #                EXE  soca_dirac.x )
 
+soca_add_test( NAME parameters_bump_cor
+               EXE  soca_parameters.x
+               NOCOMPARE )
 
 # Dirac tests
 
