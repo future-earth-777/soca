@@ -9,7 +9,7 @@ from pylab import get_current_fig_manager as gcfm
 import wx
 import numpy as np
 from mpl_toolkits.basemap import Basemap
-from netCDF4 import Dataset, MFDataset
+from netCDF4 import Dataset, MFDataset, chartostring
 import matplotlib.pyplot as plt
 import sys
 import matplotlib.cm as cm
@@ -25,7 +25,7 @@ def plot_prof(dax, fcst, ana, obs, z, var_name):
     dax.plot(fcst, z, '-og',lw=1)
     dax.plot(ana, z, '-sr',lw=2)
     dax.plot(obs, z, '-*b')
-    dax.set_xlabel(var_name)
+    dax.set_xlabel(var_name,fontweight='bold')
     dax.grid(True)
 
 def plot_reg(dax, x1, x2, xcolor, title):
@@ -36,13 +36,19 @@ def plot_reg(dax, x1, x2, xcolor, title):
     plt.grid(True)
     plt.title(titlestr,fontsize=24,fontweight='bold')
 
-def draw_map(lonl=-180, lonr=180):
-    map = Basemap(projection='robin',lon_0=0,resolution='c')
+def draw_map(lonl=-180, lonr=180, proj='global'):
+    if proj=='global':
+        map = Basemap(projection='robin',lon_0=0,resolution='c')
+    if proj=='polarn':
+        map = Basemap(projection='npstere',boundinglat=60,lon_0=0,resolution='l')
+    if proj=='polars':
+        map = Basemap(projection='spstere',boundinglat=-50,lon_0=0,resolution='l')
     map.drawcoastlines()
     map.fillcontinents(color='brown',lake_color='aqua', zorder=1)
     map.drawparallels(np.arange(-90.,120.,30.),labels=[1,0,0,0])
     map.drawmeridians(np.arange(0.,420.,60.),labels=[0,0,0,1])
     map.drawmapboundary(fill_color='aqua',zorder=0)
+
     return map
 
 def find_inst(INSTID, dict_inst):
@@ -72,16 +78,20 @@ def obsid2instidvarid(obsid, var):
     if (var=='sea_surface_temperature'):
         varid=101*varid
         instid=520*instid
+    if (var=='sea_ice_area_fraction'):
+        varid=106*varid
+        instid=525*instid
     return instid, varid
 
 class Instrument:
-    def __init__(self, name, instid, varid, zmin, zmax, color='k'):
+    def __init__(self, name, instid, varid, zmin, zmax, color='k', proj=['global']):
         self.name = name
         self.instid = instid      # Instrument ID
         self.varid = varid        # Var ID
         self.zmin = zmin
         self.zmax = zmax
         self.color = color
+        self.proj = proj
 
 class VarSpecs:
     def __init__(self, varid, bounds, fignum, units):
@@ -92,9 +102,10 @@ class VarSpecs:
 
 def dictionaries():
     dict_inst = {
-                 'PROFILE'   : Instrument(name='PROFILE',   instid=508, varid=np.array([101, 102]), zmin=0, zmax=2000),
-                 'ALTIMETER' : Instrument(name='ALTIMETER', instid=517, varid=np.array([105]),      zmin=0, zmax=0),
-                 'SST'       : Instrument(name='SST',       instid=520, varid=np.array([101]),      zmin=0, zmax=10),
+                 'PROFILE'      : Instrument(name='PROFILE', instid=508, varid=np.array([101, 102]), zmin=0, zmax=2000),
+                 'ALTIMETER' : Instrument(name='ALTIMETER',  instid=517, varid=np.array([105]),      zmin=0, zmax=0),
+                 'SST'       : Instrument(name='SST',        instid=520, varid=np.array([101]),      zmin=0, zmax=10),
+                 'AICE'      : Instrument(name='AICE',       instid=525, varid=np.array([106]),      zmin=0, zmax=1, proj=['polarn','polars']),
     }
 
     dict_varspecs = {'T'    : VarSpecs(varid=101, bounds= [-3., 38.], fignum=1, units='^oC'),
@@ -105,7 +116,7 @@ def dictionaries():
                      'aice' : VarSpecs(varid=106, bounds= [0.,   1.], fignum=6, units=''),
                      'hice' : VarSpecs(varid=107, bounds= [0.,  20.], fignum=7, units='m')}
 
-    COLORS=['b','r','g','k','m','y']
+    COLORS=['b','r','g','m','m','y']
 
     return dict_inst, dict_varspecs, COLORS
 
@@ -118,17 +129,29 @@ class ioda:
         self.omf=[]
         self.obs=[]
         self.obserror=[]
+        self.preqc=[]
+        self.postqc=[]        
         self.lev=[]
         self.varid=[]
         self.instid=[]
         self.col=[]
-        self.tt=[]
+        self.time=[]
         list_of_vars = ['sea_water_temperature',
                         'sea_water_salinity',
                         'obs_absolute_dynamic_topography',
-                        'sea_surface_temperature']
+                        'sea_surface_temperature',
+                        'sea_ice_area_fraction']
         for iodafname in tqdm(flist):
             ncfile = Dataset(iodafname)
+
+            #alltime=[]
+            #alltime_tmp=get_from_ioda(ncfile,'datetime@MetaData');
+            #for t in range(alltime_tmp.shape[0]):
+             #   dum=[]
+              #  for c in range(20):
+               #     dum=np.append(dum,alltime_tmp[t,c].decode('UTF-8'))
+               # alltime=np.append(alltime, dum)
+
             for var in list_of_vars:
                 try:
                     try:
@@ -142,6 +165,8 @@ class ioda:
                         I=np.where(abs(dum)<9999.9)
                         self.omf=np.append(-dum[I],self.omf)
 
+                    #self.time = alltime[I]
+
                     ivar=var+'@oman'
                     dum=get_from_ioda(ncfile,ivar);
                     self.oma = np.append(-dum[I],self.oma)
@@ -151,6 +176,12 @@ class ioda:
                     ivar=var+'@ObsError'
                     dum=get_from_ioda(ncfile,ivar);
                     self.obserror = np.append(dum[I],self.obserror)
+                    ivar=var+'@PreQC'
+                    dum=get_from_ioda(ncfile,ivar);
+                    self.preqc = np.append(dum[I],self.preqc)
+                    ivar=var+'@EffectiveQC0'
+                    dum=get_from_ioda(ncfile,ivar);
+                    self.postqc = np.append(dum[I],self.postqc)
 
                     dum=get_from_ioda(ncfile,'longitude@MetaData');
                     self.lon = np.append(dum[I],self.lon)
@@ -170,10 +201,10 @@ class ioda:
 
             ncfile.close()
         nobs=len(self.lon)
-        self.tt = np.zeros(np.shape(self.varid))
+        self.time = np.zeros(np.shape(self.varid))
 
 class observation_space(object):
-    def __init__(self,iodafname,i=[]):
+    def __init__(self,iodafname): #,i=[]):
         self.ioda=ioda(iodafname)
         self.iodafname=iodafname
         self.fignum = 2
@@ -193,11 +224,37 @@ class observation_space(object):
         self.X=x
         self.Y=y
         cnt=0
-        for inst in [508, 517, 520]:
-            I=np.where(self.ioda.instid==inst)
-            self.axis.plot(x[I], y[I], linestyle='None', marker='.', markersize=5, label='myplot',color=COLORS[cnt])
+        alpha=1.0
+        for inst in [508, 517, 520, 525]:
+            msize = 1.0
+            print(inst,inst==520)
+            if (inst==520):
+                alpha = 0.5
+                msize = 1.0
+            elif (inst == 525 ):
+                alpha = 0.5
+                msize = 1.0
+            elif (inst == 517 ):
+                alpha = 1.0
+                msize = 2.0
+            else:
+                alpha = 1.0
+                msize = 5.0
+
+            # Plot obs loc
+            I=np.where( np.logical_and( (self.ioda.instid==inst), (self.ioda.postqc==0), (self.ioda.preqc==0) ) )
+            self.axis.plot(x[I], y[I], linestyle='None', marker='.', 
+                                                         markersize=msize,
+                                                         label='myplot',
+                                                         color=COLORS[cnt], 
+                                                         alpha=alpha)
             cnt+=1
 
+        # Plot qc'ed obs loc
+        #I=np.where((self.ioda.preqc+self.ioda.postqc)>0.)
+        #self.axis.plot(x[I], y[I], linestyle='None', marker='.', markersize=5, label='myplot',color='k', alpha=.1)
+            
+            
     def _onMotion(self, event):
         collisionFound = False
         if event.xdata != None and event.ydata != None: # mouse is inside the axes
@@ -218,13 +275,15 @@ class observation_space(object):
 
     def _onClick(self, event):
 
-        if event.button == 1:    # Left mouse click: Profile
+        # Left mouse click: Profile
+        #------------------------------------
+        if event.button == 1:
             self.figure2 = plt.figure(num=self.fignum, figsize=(16, 12), facecolor='c')
             self.axis2 = self.figure2.add_axes([0.3,0.69,0.4,0.3])
             map=draw_map()
             for shift in [0, 360]:
                 x, y =map(self.dataX+shift,self.dataY)
-                self.axis2.plot(x[:], y[:], linestyle='None', marker='.', markersize=2, label='myplot',color='b')
+                self.axis2.plot(x[:], y[:], linestyle='None', marker='.', markersize=.1, alpha=0.1, label='myplot',color='b')
                 self.axis2.plot(x[self.i], y[self.i], linestyle='None', marker='.', markersize=10, label='myplot', color='k')
 
             # Identify instrument and variable
@@ -233,13 +292,13 @@ class observation_space(object):
 
             # Prepare axis
             self.axis3 = self.figure2.add_axes([0.1,0.05,0.35,0.6])
-            self.axis3.set_ylabel('Depth [m]')
+            self.axis3.set_ylabel('Depth [m]', fontweight='bold')
             self.axis4 = self.figure2.add_axes([0.55,0.05,0.35,0.6])
 
             # Get indices of observation pointed by mouth
             I=np.where( (self.ioda.lon==self.dataX[self.i]) & (self.ioda.lat==self.dataY[self.i]) )
             z=self.ioda.lev[I]
-            time=self.ioda.tt[I]
+            time=self.ioda.time[I]
             fcst=self.ioda.obs[I]-self.ioda.omf[I]
             ana=self.ioda.obs[I]-self.ioda.oma[I]
             obsi=self.ioda.obs[I]
@@ -247,6 +306,7 @@ class observation_space(object):
             obserrori=self.ioda.obserror[I]
 
             for uvarid in tqdm(np.unique(self.ioda.varid)):
+                print("=============================",uvarid)
                 # Select variable
                 II=np.where( obsvarid == uvarid )
                 uz=z[II]
@@ -259,10 +319,12 @@ class observation_space(object):
                 III = np.argsort(uz)
 
                 # Plot obs, background, analysis
-                plot_prof(self.axis3, ufcst[III], uana[III], uobs[III], uz[III], var_name)
+                if uvarid==101:
+                    plot_prof(self.axis3, ufcst[III], uana[III], uobs[III], uz[III], 'Insitu temperature [^oC]')
 
                 # Plot omf, omaq
-                plot_prof(self.axis4, uobs[III]-ufcst[III], uobs[III]-uana[III], ufcst[III]-uana[III], uz[III], var_name)
+                if uvarid==102:
+                    plot_prof(self.axis4, ufcst[III], uana[III], uobs[III], uz[III], 'Practical salinity [psu]')
 
                 # Add obs info to the figure
                 self.axis5 = self.figure2.add_axes([0.75,0.75,0.2,0.2],frameon=False)
@@ -276,7 +338,9 @@ class observation_space(object):
 
             plt.show()
 
-        if event.button == 2:    # Middle mouse click: Regression plot for all instruments
+        # Middle mouse click: Regression plot for all instruments
+        #------------------------------------------------------------------------------------
+        if event.button == 2:
             # Isolate variable type
             for INSTID in tqdm(np.unique(self.ioda.instid)):
                 # Identify instrument
@@ -290,46 +354,55 @@ class observation_space(object):
                 axis2 = figure2.add_subplot(211)
                 titlestr=inst_name+' OMF'
                 plot_reg(axis2, self.ioda.obs[I], -self.ioda.omf[I]+self.ioda.obs[I], 'g', titlestr)
+                axis2.set_aspect('equal', 'box')
 
                 axis3 = figure2.add_subplot(212)
                 titlestr=inst_name+' OMA'
                 plot_reg(axis3, self.ioda.obs[I], -self.ioda.oma[I]+self.ioda.obs[I], 'r', titlestr)
+                axis3.set_aspect('equal', 'box')
 
                 self.fignum+=1
 
             plt.show()
 
-        if event.button == 3:    # Right mouse click: Horizontal scatter plot of omf's and oma's for all instruments
+        # Right mouse click: Horizontal scatter plot of omf's and oma's for all instruments
+        #--------------------------------------------------------------------------------------------------------------------------
+        if event.button == 3:
             # Isolate var type
             for INSTID in tqdm(np.unique(self.ioda.instid)):
                 # Identify instrument
                 for instrument in dict_inst:
                     if INSTID==dict_inst[instrument].instid:
                         inst_name=dict_inst[instrument].name
+                        allproj=dict_inst[instrument].proj
 
-                figure2 = plt.figure(num=self.fignum, figsize=(16, 12), facecolor='c')
-                axis2 = figure2.add_subplot(211)
-                map=draw_map()
-                I=np.where(self.ioda.instid==INSTID)
-                STD=np.std(self.ioda.omf[I])
-                for shift in [0, 360]:
-                    x, y =map(self.dataX[I]+shift,self.dataY[I])
-                    axis2.scatter(x, y, 5, c=self.ioda.omf[I], cmap=cm.bwr,vmin=-2*STD,vmax=2*STD,edgecolor=None,lw=0)
-                titlestr=inst_name+' OMF'
-                plt.title(titlestr,fontsize=24,fontweight='bold')
+                for proj in allproj:
+                    figure2 = plt.figure(num=self.fignum, figsize=(16, 12), facecolor='c')
 
-                axis3 = figure2.add_subplot(212)
-                map=draw_map()
-                for shift in [0, 360]:
-                    x, y =map(self.dataX[I]+shift,self.dataY[I])
-                    axis3.scatter(x, y, 5, c=self.ioda.oma[I], cmap=cm.bwr,vmin=-2*STD,vmax=2*STD,edgecolor=None,lw=0)
-                titlestr=inst_name+' OMA'
-                plt.title(titlestr,fontsize=24,fontweight='bold')
-                self.fignum+=1
+                    #I=np.where(self.ioda.instid==INSTID)
+                    I=np.where( np.logical_and( (self.ioda.instid==INSTID), (self.ioda.postqc==0), (self.ioda.preqc==0) ) )
+                    STD=np.std(self.ioda.omf[I])
 
-            ax4 = figure2.add_axes([0.15, 0.25, 0.025, 0.5])
-            norm = mpl.colors.Normalize(vmin=-2*STD,vmax=2*STD)
-            mpl.colorbar.ColorbarBase(ax4, cmap=cm.bwr,norm=norm,orientation='vertical',extend='both')
+                    axis2 = figure2.add_subplot(211)
+                    map=draw_map(proj=proj)
+                    for shift in [0, 360]:
+                        x, y =map(self.dataX[I]+shift,self.dataY[I])
+                        axis2.scatter(x, y, 1, c=self.ioda.omf[I], cmap=cm.bwr,vmin=-2*STD,vmax=2*STD,edgecolor=None,lw=0)
+                    titlestr=inst_name+' OMF'
+                    plt.title(titlestr,fontsize=24,fontweight='bold')
+
+                    axis3 = figure2.add_subplot(212)
+                    map=draw_map(proj=proj)
+                    for shift in [0, 360]:
+                        x, y =map(self.dataX[I]+shift,self.dataY[I])
+                        axis3.scatter(x, y, 1, c=self.ioda.oma[I], cmap=cm.bwr,vmin=-2*STD,vmax=2*STD,edgecolor=None,lw=0)
+                    titlestr=inst_name+' OMA'
+                    plt.title(titlestr,fontsize=24,fontweight='bold')
+                    self.fignum+=1
+
+                    ax4 = figure2.add_axes([0.15, 0.25, 0.025, 0.5])
+                    norm = mpl.colors.Normalize(vmin=-.5*STD,vmax=.5*STD)
+                    mpl.colorbar.ColorbarBase(ax4, cmap=cm.bwr,norm=norm,orientation='vertical',extend='both')
             plt.show()
 
 if __name__ == '__main__':
@@ -357,4 +430,14 @@ if __name__ == '__main__':
     listoffiles = args.input
     dict_inst, dict_varspecs, COLORS = dictionaries()
     example=observation_space(listoffiles)
-    plt.show()
+
+    titlestr = listoffiles[0]
+    titlestr = titlestr[34+16:44+16]
+    figname = titlestr[0:4]+'-'+titlestr[4:6]+'-'+titlestr[6:8]+'-'+titlestr[8:]+'z.png'    
+    titlestr = titlestr[0:4]+'-'+titlestr[4:6]+'-'+titlestr[6:8]+'  '+titlestr[8:]+'z'
+    plt.title(titlestr, fontsize=18, fontweight='bold')
+    plt.savefig(figname)
+    plt.draw()
+    plt.close()
+    #plt.show()
+

@@ -4,13 +4,17 @@ from netCDF4 import Dataset, num2date, date2num
 import numpy as np
 from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 import scipy.stats as stats
 import cartopy.crs as ccrs
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from cmocean import cm as cmo
+try:
+    from cmocean import cm as cmo
+    defaultcm = cmo.balance
+except:
+    import matplotlib.cm as cmo
+    defaultcm = cmo.jet
 
-def plothor(x, y, z, map, varname='', clim=[-1,1], proj_type='reg', plot_type='pcolor', colormap=cmo.balance):
+def plothor(x, y, z, map, varname='', clim=[-1,1], proj_type='reg', plot_type='pcolor', colormap=defaultcm):
     a=clim[0]
     b=clim[1]
 
@@ -102,13 +106,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
     grid = Grid(fname=args.grid)
     var = get_var(filename=args.file, varname=args.variable)
+    #plt.pcolor(grid.lon,grid.lat,var/grid.mask,vmin=args.clim[0],vmax=args.clim[1])
+    #plt.colorbar()
     plothor(grid.lon,grid.lat,var/grid.mask,
             map,varname=args.variable,
-            clim=args.clim,
-            colormap=args.color)
-    plothor(grid.lon,grid.lat,var/grid.mask,map,
-            varname=args.variable,
-            clim=args.clim,
-            proj_type='north',
-            colormap=args.color)
+            clim=args.clim)#,
+    #        colormap=args.color)
+    #plothor(grid.lon,grid.lat,var/grid.mask,map,
+    #        varname=args.variable,
+    #        clim=args.clim,
+    #        proj_type='north',
+    #        colormap=args.color)
     plt.show()
