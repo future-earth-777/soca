@@ -106,11 +106,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     grid = Grid(fname=args.grid)
     var = get_var(filename=args.file, varname=args.variable)
-    #plt.pcolor(grid.lon,grid.lat,var/grid.mask,vmin=args.clim[0],vmax=args.clim[1])
-    #plt.colorbar()
-    plothor(grid.lon,grid.lat,var/grid.mask,
-            map,varname=args.variable,
-            clim=args.clim)#,
+    plt.pcolor(grid.lon,grid.lat,var/grid.mask,vmin=args.clim[0],vmax=args.clim[1])
+    plt.colorbar()
+    #plothor(grid.lon,grid.lat,var/grid.mask,
+    #        map,varname=args.variable,
+    #        clim=args.clim)#,
     #        colormap=args.color)
     #plothor(grid.lon,grid.lat,var/grid.mask,map,
     #        varname=args.variable,

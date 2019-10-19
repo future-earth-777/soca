@@ -365,7 +365,8 @@ class observation_space(object):
 
             plt.show()
 
-        # Right mouse click: Horizontal scatter plot of omf's and oma's for all instruments
+        # Right mouse click: Horizontal scatter plot of omf's and oma's for surface
+        #                    Vertical scatter for profiles
         #--------------------------------------------------------------------------------------------------------------------------
         if event.button == 3:
             # Isolate var type
@@ -375,7 +376,7 @@ class observation_space(object):
                     if INSTID==dict_inst[instrument].instid:
                         inst_name=dict_inst[instrument].name
                         allproj=dict_inst[instrument].proj
-
+                
                 for proj in allproj:
                     figure2 = plt.figure(num=self.fignum, figsize=(16, 12), facecolor='c')
 
@@ -431,13 +432,13 @@ if __name__ == '__main__':
     dict_inst, dict_varspecs, COLORS = dictionaries()
     example=observation_space(listoffiles)
 
-    titlestr = listoffiles[0]
-    titlestr = titlestr[34+16:44+16]
-    figname = titlestr[0:4]+'-'+titlestr[4:6]+'-'+titlestr[6:8]+'-'+titlestr[8:]+'z.png'    
-    titlestr = titlestr[0:4]+'-'+titlestr[4:6]+'-'+titlestr[6:8]+'  '+titlestr[8:]+'z'
-    plt.title(titlestr, fontsize=18, fontweight='bold')
-    plt.savefig(figname)
-    plt.draw()
-    plt.close()
-    #plt.show()
+    #titlestr = listoffiles[0]
+    #titlestr = titlestr[34+16:44+16]
+    #figname = titlestr[0:4]+'-'+titlestr[4:6]+'-'+titlestr[6:8]+'-'+titlestr[8:]+'z.png'    
+    #titlestr = titlestr[0:4]+'-'+titlestr[4:6]+'-'+titlestr[6:8]+'  '+titlestr[8:]+'z'
+    #plt.title(titlestr, fontsize=18, fontweight='bold')
+    #plt.savefig(figname)
+    #plt.draw()
+    #plt.close()
+    plt.show()
 
