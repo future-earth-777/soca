@@ -17,7 +17,8 @@ private
 public :: soca_bumpinterp2d
 
 type :: soca_bumpinterp2d
-   type(obsop_type)                  :: obsop         !< bump interp object
+   type(bump_type)                   :: bump          !< bump interp object
+   !type(obsop_type)                  :: obsop         !< bump interp object
    integer                           :: nobs          !< Number of values to interpolate
    real(kind=kind_real), allocatable :: lono(:)       !< Longitude of destination
    real(kind=kind_real), allocatable :: lato(:)       !< Latitude of destination
@@ -34,8 +35,8 @@ end type soca_bumpinterp2d
 ! (obsop inside soca_bumpinterp2d) because the unstructured grid only needs
 ! to be setup once
 ! TODO: these shouldn't be globals, put them somewhere correct
-type(bump_type) :: bump
-logical         :: bump_initialized = .false.
+!type(bump_type) :: bump
+!logical         :: bump_initialized = .false.
 
 contains
 
@@ -64,71 +65,65 @@ subroutine interp_init(self, mod_lon, mod_lat, obs_lon, obs_lat, bumpid)
 
   ! Initialize the bump grid for the obs interpolation
   ! This only needs to be done once
-  if(.not. bump_initialized) then
-    ! Each bump%nam%prefix must be distinct, set bump id
-    write(cbumpcount,"(I0.5)") bumpid
-    bump_nam_prefix = 'soca_bump_interp_'//cbumpcount
+  !if(.not. bump_initialized) then
+  ! Each bump%nam%prefix must be distinct, set bump id
+  write(cbumpcount,"(I0.5)") bumpid
+  bump_nam_prefix = 'soca_bump_interp_'//cbumpcount
 
-    !Get the obs and state dimension
-    ni = size(mod_lon, 1)
-    nj = size(mod_lon, 2)
-    ns = ni * nj
-
-    ! Initialize bump parameters
-    call bump%nam%init()
-    bump%nam%prefix = bump_nam_prefix   ! Prefix for files output
-    bump%nam%default_seed = .true.
-    bump%nam%new_obsop = .true.
-    bump%nam%verbosity = 'none'
-    bump%nam%write_obsop = .false.
-    bump%nam%sam_write = .false.
-    bump%nam%strategy = 'specific_univariate'
-
-    !Initialize geometry
-    allocate(area(ns))
-    allocate(vunit(ns,1))
-    area = 1.0           ! Dummy area
-    vunit = 1.0          ! Dummy vertical unit
-
-    !Allocate temporary arrays
-    allocate(tmp_lonmod(ns), tmp_latmod(ns), tmp_maskmod(ni, nj))
-    tmp_lonmod(:) = reshape(mod_lon, (/ns/))
-    tmp_latmod(:) = reshape(mod_lat, (/ns/))
-
-    ! TODO: Fix interp with mask
-  !!$   tmp_maskmod = .false.
-  !!$    where(mod_mask==1.0)
-  !!$       tmp_maskmod = .true.
-  !!$    end where
-    tmp_maskmod = reshape(tmp_maskmod, (/ns, 1/))
-    tmp_maskmod = .true.
-
-    ! Rotate longitudes
-    where (tmp_lonmod < -180.0_kind_real)
-       tmp_lonmod = tmp_lonmod + 360.0_kind_real
-    end where
-
-    !Initialize the bump geometry
-    f_comm = fckit_mpi_comm()
-    call bump%setup_online( f_comm, ns, 1, 1, 1,&
-         &tmp_lonmod, tmp_latmod, area, vunit, tmp_maskmod(:,1))
-
-    !Release memory
-    deallocate(area)
-    deallocate(vunit)
-    deallocate(tmp_lonmod, tmp_latmod, tmp_maskmod)
-
-    bump_initialized = .true.
-  end if
-
-  ! initialize the interpolation weights
+  !Get the obs and state dimension
+  ni = size(mod_lon, 1)
+  nj = size(mod_lon, 2)
+  ns = ni * nj
   no = size(obs_lon, 1)
-  call self%obsop%from(no, obs_lon, obs_lat)
-  call self%obsop%run_obsop(bump%mpl,bump%rng,bump%nam,bump%geom)
-  if (bump%nam%default_seed) call bump%rng%reseed(bump%mpl)
+
+  ! Initialize bump parameters
+  call self%bump%nam%init()
+  self%bump%nam%prefix = bump_nam_prefix   ! Prefix for files output
+  self%bump%nam%default_seed = .true.
+  self%bump%nam%new_obsop = .true.
+  self%bump%nam%verbosity = 'none'
+  self%bump%nam%write_obsop = .false.
+  self%bump%nam%sam_write = .false.
+  self%bump%nam%strategy = 'specific_univariate'
+
+  !Initialize geometry
+  allocate(area(ns))
+  allocate(vunit(ns,1))
+  area = 1.0           ! Dummy area
+  vunit = 1.0          ! Dummy vertical unit
+
+  !Allocate temporary arrays
+  allocate(tmp_lonmod(ns), tmp_latmod(ns), tmp_maskmod(ni, nj))
+  tmp_lonmod(:) = reshape(mod_lon, (/ns/))
+  tmp_latmod(:) = reshape(mod_lat, (/ns/))
+
+  ! TODO: Fix interp with mask
+!!$   tmp_maskmod = .false.
+!!$    where(mod_mask==1.0)
+!!$       tmp_maskmod = .true.
+!!$    end where
+  tmp_maskmod = reshape(tmp_maskmod, (/ns, 1/))
+  tmp_maskmod = .true.
+
+  ! Rotate longitudes
+  where (tmp_lonmod < -180.0_kind_real)
+     tmp_lonmod = tmp_lonmod + 360.0_kind_real
+  end where
+
+  !Calculate interpolation weight using BUMP
+  call self%bump%setup_online( f_comm, ns, 1, 1, 1,&
+       &tmp_lonmod, tmp_latmod, area, vunit, tmp_maskmod(:,1),&
+       &nobs=no, lonobs=obs_lon, latobs=obs_lat )
+  call self%bump%run_drivers()
+  call self%bump%partial_dealloc
 
   self%initialized = .true.
   self%nobs = no
+
+  !Release memory
+  deallocate(area)
+  deallocate(vunit)
+  deallocate(tmp_lonmod, tmp_latmod, tmp_maskmod)
 
 end subroutine interp_init
 
@@ -153,7 +148,7 @@ subroutine interp_apply(self, fld, obs)
   !tmp_fld = fld
   !tmp_fld = reshape(tmp_fld,(/ns, 1/))
   tmp_obs(:,1) = obs
-  call self%obsop%apply(bump%mpl,bump%geom,fld,tmp_obs)
+  call self%bump%apply_obsop(fld,tmp_obs)
   obs = tmp_obs(:,1)
 
   deallocate(tmp_obs)
@@ -169,7 +164,7 @@ subroutine interpad_apply(self, fld, obs)
   real(kind=kind_real),     intent(inout) :: fld(:,:)
   real(kind=kind_real),        intent(in) :: obs(:)
 
-  call self%obsop%apply_ad(bump%mpl,bump%geom,obs,fld)
+  call self%bump%apply_obsop_ad(obs,fld)
 
 end subroutine interpad_apply
 
@@ -194,6 +189,7 @@ subroutine interp_exit(self)
   self%nobs = 0
   if (allocated(self%lono)) deallocate(self%lono)
   if (allocated(self%lato)) deallocate(self%lato)
+  call self%bump%dealloc()
   self%initialized = .false.
 
 end subroutine interp_exit
