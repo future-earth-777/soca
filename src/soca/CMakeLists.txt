@@ -78,6 +78,7 @@ Transforms/Balance/soca_balance.interface.F90
 Transforms/Balance/soca_balance_mod.F90
 Transforms/Balance/soca_kst_mod.F90
 Transforms/Balance/soca_ksshts_mod.F90
+Transforms/Balance/soca_diffop_mod.F90
 
 Transforms/BkgErr/BkgErr.cc
 Transforms/BkgErr/BkgErr.h

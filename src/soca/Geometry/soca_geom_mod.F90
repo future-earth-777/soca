@@ -410,6 +410,9 @@ subroutine geom_thickness2depth(self, h, z)
         end do
      end do
   end do
+  ! Fill halo
+  call mpp_update_domains(z, self%Domain%mpp_domain)
+
 end subroutine geom_thickness2depth
 
 ! ------------------------------------------------------------------------------
