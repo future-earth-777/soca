@@ -32,6 +32,7 @@ use soca_fieldsutils_mod, only: soca_genfilename, fldinfo
 use soca_ocnsfc_mod, only: soca_ocnsfc_type
 use soca_seaice_mod, only: soca_seaice_type
 use soca_utils, only: soca_mld
+use soca_diffop_mod
 
 implicit none
 
@@ -100,7 +101,7 @@ subroutine create_constructor(self, geom, vars)
   allocate(self%fldnames(self%nf))
   do i=1,self%nf
     self%fldnames(i)=vars%variable(i)
-  end do 
+  end do
 
   call check(self)
 
@@ -521,29 +522,29 @@ end subroutine dot_prod
 
 ! ------------------------------------------------------------------------------
 
-subroutine add_incr(self,rhs)
+subroutine add_incr(self,incr)
   type(soca_field), intent(inout) :: self
-  type(soca_field), intent(in)    :: rhs
+  type(soca_field), intent(in)    :: incr
 
   integer, save :: cnt_outer = 1
   character(len=800) :: filename, str_cnt
 
   call check(self)
-  call check(rhs)
+  call check(incr)
 
   ! Add increment to field
-  self%tocn = self%tocn + rhs%tocn
-  self%socn = self%socn + rhs%socn
-  self%ssh = self%ssh + rhs%ssh
-  self%hocn = self%hocn + rhs%hocn
+  self%tocn = self%tocn + incr%tocn
+  self%socn = self%socn + incr%socn
+  self%ssh = self%ssh + incr%ssh
+  self%hocn = self%hocn + incr%hocn
 
-  call self%seaice%add_incr(rhs%seaice)
-  call self%ocnsfc%add(rhs%ocnsfc)
+  call self%seaice%add_incr(incr%seaice)
+  call self%ocnsfc%add(incr%ocnsfc)
 
   ! Save increment for outer loop cnt_outer
   write(str_cnt,*) cnt_outer
   filename='incr.'//adjustl(trim(str_cnt))//'.nc'
-  call soca_fld2file(rhs, filename)
+  call soca_fld2file(incr, filename, self)
 
   ! Update outer loop counter
   cnt_outer = cnt_outer + 1
@@ -1182,12 +1183,16 @@ end subroutine check
 
 ! ------------------------------------------------------------------------------
 !> Save soca fields to file using fms write_data
-subroutine soca_fld2file(fld, filename)
-  type(soca_field),   intent(in) :: fld    !< Fields
-  character(len=800), intent(in) :: filename
+subroutine soca_fld2file(fld, filename, traj)
+  type(soca_field),           intent(in) :: fld    !< Fields
+  character(len=800),         intent(in) :: filename
+  type(soca_field), optional, intent(in) :: traj
 
   integer :: ii
   character(len=800) :: fname
+  type(soca_diffop_type) :: diffop
+  real(kind=kind_real), allocatable :: usg(:,:,:), vsg(:,:,:), h(:,:,:)
+  real(kind=kind_real), allocatable :: ug(:,:,:), vg(:,:,:)
 
   fname = trim(filename)
 
@@ -1227,6 +1232,31 @@ subroutine soca_fld2file(fld, filename)
      end select
 
   end do
+
+  if (present(traj)) then
+     ! Barotropic geostrophic current
+     allocate(h(fld%geom%isd:fld%geom%ied,fld%geom%jsd:fld%geom%jed,1))
+     h= 1.0
+     call diffop%setup(fld%geom, h)
+     allocate(vsg(fld%geom%isd:fld%geom%ied,fld%geom%jsd:fld%geom%jed,1))
+     allocate(usg(fld%geom%isd:fld%geom%ied,fld%geom%jsd:fld%geom%jed,1))
+     call diffop%sfc_geo(fld%ssh,usg,vsg,fld%geom)
+     call diffop%delete()
+     call write_data(fname, "vsg", vsg, fld%geom%Domain%mpp_domain)
+     call write_data(fname, "usg", usg, fld%geom%Domain%mpp_domain)
+
+     ! 3D geostrophic current
+     call diffop%setup(fld%geom, traj%hocn)
+     allocate(vg(fld%geom%isd:fld%geom%ied,fld%geom%jsd:fld%geom%jed,1:fld%geom%nzo))
+     allocate(ug(fld%geom%isd:fld%geom%ied,fld%geom%jsd:fld%geom%jed,1:fld%geom%nzo))
+     call diffop%geostrophy(traj%hocn,traj%tocn,traj%socn, &
+                            fld%tocn,fld%socn, &
+                            ug,vg,fld%geom)
+     call write_data(fname, "vg", vg, fld%geom%Domain%mpp_domain)
+     call write_data(fname, "ug", ug, fld%geom%Domain%mpp_domain)
+
+  end if
+
   call fms_io_exit()
 
 end subroutine soca_fld2file
@@ -1243,6 +1273,8 @@ subroutine soca_write_restart(fld, f_conf, vdate)
   type(restart_file_type) :: ocean_restart
   type(restart_file_type) :: ocnsfc_restart
   integer :: idr, idr_ocean
+  type(soca_diffop_type) :: diffop
+  real(kind=kind_real), allocatable :: ug(:,:,:), vg(:,:,:), h(:,:,:)
 
   ! Generate file names
   ocn_filename = soca_genfilename(f_conf,max_string_length,vdate,"ocn")
@@ -1305,7 +1337,7 @@ subroutine soca_getpoint(self, geoiter, values)
   ncat = self%geom%ncat
 
   ! get values
-  ii = 0 
+  ii = 0
   do ff = 1, self%nf
     select case(self%fldnames(ff))
     case("tocn")
