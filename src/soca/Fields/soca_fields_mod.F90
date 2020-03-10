@@ -433,8 +433,8 @@ subroutine soca_fields_dirac(self, f_conf)
 
   type(soca_field), pointer :: field
 
-  ! Get MPI communicator
-  f_comm = fckit_mpi_comm()
+  ! Get MPI communicator from geometry
+  f_comm = self%geom%f_comm
 
   ! Get Diracs size
   ndir = f_conf%get_size("ixdir")
@@ -651,7 +651,7 @@ subroutine soca_fields_dotprod(fld1,fld2,zprod)
   end do
 
   ! Get global dot product
-  f_comm = fckit_mpi_comm()
+  f_comm = fld1%geom%f_comm
   call f_comm%allreduce(local_zprod, zprod, fckit_mpi_sum())
 end subroutine soca_fields_dotprod
 
@@ -1042,7 +1042,7 @@ subroutine soca_fields_gpnorm(fld, nf, pstat)
   type(fckit_mpi_comm) :: f_comm
   type(soca_field), pointer :: field
 
-  f_comm = fckit_mpi_comm()
+  f_comm = fld%geom%f_comm
 
   ! Indices for compute domain
   isc = fld%geom%isc ; iec = fld%geom%iec

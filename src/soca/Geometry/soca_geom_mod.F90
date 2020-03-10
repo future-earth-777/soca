@@ -52,6 +52,7 @@ type :: soca_geom
     real(kind=kind_real), allocatable, dimension(:,:) :: cell_area
     real(kind=kind_real), allocatable, dimension(:,:) :: rossby_radius
     logical :: save_local_domain = .false. ! If true, save the local geometry for each pe.
+    type(fckit_mpi_comm) :: f_comm
     contains
     procedure :: init => geom_init
     procedure :: end => geom_end
@@ -70,14 +71,19 @@ contains
 
 ! ------------------------------------------------------------------------------
 !> Setup geometry object
-subroutine geom_init(self, f_conf)
+subroutine geom_init(self, f_conf, f_comm)
   class(soca_geom), intent(out) :: self
   type(fckit_configuration), intent(in) :: f_conf
+  type(fckit_mpi_comm), intent(in) :: f_comm
 
   integer :: isave = 0
 
+  ! Add the communicator to the geometry
+  ! ------------------------------------
+  self%f_comm = f_comm
+
   ! Domain decomposition
-  call soca_geomdomain_init(self%Domain, self%nzo)
+  call soca_geomdomain_init(self%Domain, self%f_comm, self%nzo)
 
   ! Initialize sea-ice grid
   if ( f_conf%has("num_ice_cat") ) &
@@ -172,6 +178,7 @@ subroutine geom_clone(self, other)
   other%mask2dv = self%mask2dv
   other%cell_area = self%cell_area
   other%rossby_radius = self%rossby_radius
+  other%f_comm = self%f_comm
 
 end subroutine geom_clone
 
@@ -183,7 +190,7 @@ subroutine geom_gridgen(self)
   type(soca_mom6_config) :: mom6_config
 
   ! Generate grid
-  call soca_mom6_init(mom6_config, partial_init=.true.)
+  call soca_mom6_init(mom6_config, self%f_comm, partial_init=.true.)
   self%lon = mom6_config%grid%GeoLonT
   self%lat = mom6_config%grid%GeoLatT
   self%lonu = mom6_config%grid%geoLonCu
@@ -297,7 +304,7 @@ subroutine geom_write(self)
   type(fckit_mpi_comm) :: f_comm
 
   ! Setup Communicator
-  f_comm = fckit_mpi_comm()
+  f_comm = self%f_comm
 
   ! Save global domain
   call fms_io_init()

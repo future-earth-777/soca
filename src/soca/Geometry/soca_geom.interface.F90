@@ -31,18 +31,23 @@ contains
 
 ! ------------------------------------------------------------------------------
 !> Setup geometry object
-subroutine c_soca_geo_setup(c_key_self, c_conf) bind(c,name='soca_geo_setup_f90')
+subroutine c_soca_geo_setup(c_key_self, c_conf, c_comm) bind(c,name='soca_geo_setup_f90')
+use fckit_mpi_module,   only: fckit_mpi_comm
 
   integer(c_int), intent(inout) :: c_key_self
   type(c_ptr),       intent(in) :: c_conf
+  type(c_ptr), value, intent(in) :: c_comm
 
   type(soca_geom), pointer :: self
+  type(fckit_mpi_comm) :: f_comm
+
+  f_comm = fckit_mpi_comm(c_comm)
 
   call soca_geom_registry%init()
   call soca_geom_registry%add(c_key_self)
   call soca_geom_registry%get(c_key_self,self)
 
-  call self%init(fckit_configuration(c_conf))
+  call self%init(fckit_configuration(c_conf), f_comm)
 
 end subroutine c_soca_geo_setup
 
@@ -92,13 +97,13 @@ subroutine c_soca_geo_delete(c_key_self) bind(c,name='soca_geo_delete_f90')
 end subroutine c_soca_geo_delete
 
 ! ------------------------------------------------------------------------------
-!> return begin and end of local geometry 
+!> return begin and end of local geometry
 subroutine c_soca_geo_start_end(c_key_self, ist, iend, jst, jend) bind(c, name='soca_geo_start_end_f90')
 
   implicit none
 
   integer(c_int), intent( in) :: c_key_self
-  integer(c_int), intent(out) :: ist, iend, jst, jend 
+  integer(c_int), intent(out) :: ist, iend, jst, jend
 
   type(soca_geom), pointer :: self
   call soca_geom_registry%get(c_key_self, self)

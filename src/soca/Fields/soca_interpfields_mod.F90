@@ -49,7 +49,7 @@ subroutine initialize_interph(fld, locs, horiz_interp, horiz_interp_masked)
   isc = fld%geom%isc ; iec = fld%geom%iec
   jsc = fld%geom%jsc ; jec = fld%geom%jec
 
-  f_comm = fckit_mpi_comm()
+  f_comm = fld%geom%f_comm
   ngrid_out = locs%nlocs
   nn = 3
 
@@ -91,7 +91,7 @@ subroutine getvalues_traj(fld, locs, vars, geoval, traj, interp_type)
   nlocs = locs%nlocs
 
   ! Get global nlocs in [t, t+dt[
-  f_comm = fckit_mpi_comm()
+  f_comm = fld%geom%f_comm
   call f_comm%allreduce(nlocs, allpes_nlocs, fckit_mpi_sum())
 
   ! Initialize traj and interp

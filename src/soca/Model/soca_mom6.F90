@@ -101,16 +101,15 @@ contains
 
 ! ------------------------------------------------------------------------------
 !> Initialize mom6's domain
-subroutine soca_geomdomain_init(Domain, nk)
+subroutine soca_geomdomain_init(Domain, f_comm, nk)
   type(MOM_domain_type), pointer, intent(in) :: Domain !< Ocean model domain
+  type(fckit_mpi_comm), intent(in) :: f_comm
   integer, intent(out) :: nk
 
   type(param_file_type) :: param_file                !< Structure to parse for run-time parameters
   type(directories)     :: dirs                      !< Structure containing several relevant directory paths
-  type(fckit_mpi_comm) :: f_comm
   character(len=40)  :: mod_name = "soca_mom6" ! This module's name.
 
-  f_comm = fckit_mpi_comm()
   call mpp_init(localcomm=f_comm%communicator())
 
   ! Initialize fms
@@ -135,8 +134,9 @@ end subroutine soca_geomdomain_init
 
 ! ------------------------------------------------------------------------------
 !> Setup/initialize/prepare mom6 for time integration
-subroutine soca_mom6_init(mom6_config, partial_init)
+subroutine soca_mom6_init(mom6_config, f_comm, partial_init)
   type(soca_mom6_config), intent(out) :: mom6_config
+  type(fckit_mpi_comm),    intent(in) :: f_comm
   logical,       optional, intent(in) :: partial_init
 
   type(time_type) :: Start_time   ! The start time of the simulation.
@@ -164,12 +164,10 @@ subroutine soca_mom6_init(mom6_config, partial_init)
        ocean_nthreads, ncores_per_node, use_hyper_thread
   integer :: param_int
   logical :: a_partial_init = .false.
-  type(fckit_mpi_comm) :: f_comm
 
   ! Check if partial mom6 init is requiered
   if (present(partial_init)) a_partial_init = partial_init
 
-  f_comm = fckit_mpi_comm()
   call MOM_infra_init(localcomm=f_comm%communicator())
   call io_infra_init()
 

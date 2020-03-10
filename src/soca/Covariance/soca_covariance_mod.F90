@@ -273,7 +273,7 @@ subroutine soca_bump_correlation(self, horiz_convol, geom, f_conf, domain)
   if (domain.eq.'ice') horiz_convol%nam%prefix = 'ice'
 
   ! Compute convolution weight
-  f_comm = fckit_mpi_comm()
+  f_comm = geom%f_comm
   call horiz_convol%setup_online(f_comm,nc0a,nl0,nv,nts,lon,lat,area,vunit,lmask)
 
   if (horiz_convol%nam%new_nicas) then

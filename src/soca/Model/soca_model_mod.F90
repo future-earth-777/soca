@@ -47,10 +47,13 @@ contains
 
 ! ------------------------------------------------------------------------------
 !> Initialize model's data structure
-subroutine soca_setup(self)
-  type(soca_model), intent(inout) :: self
+subroutine soca_setup(self, f_comm)
+  use fckit_mpi_module, only: fckit_mpi_comm
 
-  call soca_mom6_init(self%mom6_config)
+  type(soca_model), intent(inout) :: self
+  type(fckit_mpi_comm), intent(in) :: f_comm
+
+  call soca_mom6_init(self%mom6_config, f_comm)
 
 end subroutine soca_setup
 

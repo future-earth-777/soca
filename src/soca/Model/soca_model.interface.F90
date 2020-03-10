@@ -86,7 +86,7 @@ subroutine c_soca_setup(c_conf, c_key_geom, c_key_model) bind (c,name='soca_setu
   endif
 
   ! Initialize mom6
-  call soca_setup(model)
+  call soca_setup(model, geom%f_comm)
 
   if (allocated(str)) deallocate(str)
 
