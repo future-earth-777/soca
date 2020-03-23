@@ -26,6 +26,14 @@ use fms_mod,         only : write_data, read_data
 use fms_io_mod,      only : fms_io_init, fms_io_exit
 use fckit_geometry_module, only: sphere_distance
 
+!use horiz_interp_mod, only: horiz_interp_type, horiz_interp_new
+
+use horiz_interp_mod, only : horiz_interp_new, horiz_interp, horiz_interp_type
+use horiz_interp_mod, only : horiz_interp_init, horiz_interp_del
+
+use horiz_interp_bilinear_mod!,  only: horiz_interp_bilinear_init, horiz_interp_bilinear
+!use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_new, horiz_interp_bilinear_del
+
 implicit none
 
 private
@@ -50,6 +58,8 @@ type :: soca_geom
     real(kind=kind_real), allocatable, dimension(:,:) :: mask2du   !< u        "   . 0 = land 1 = ocean
     real(kind=kind_real), allocatable, dimension(:,:) :: mask2dv   !< v        "   . 0 = land 1 = ocean
     real(kind=kind_real), allocatable, dimension(:,:) :: cell_area
+    type(horiz_interp_type) :: u2h_wgt
+    type(horiz_interp_type) :: v2h_wgt
     real(kind=kind_real), allocatable, dimension(:,:) :: rossby_radius
     logical :: save_local_domain = .false. ! If true, save the local geometry for each pe.
     contains
@@ -61,6 +71,7 @@ type :: soca_geom
     procedure :: thickness2depth => geom_thickness2depth
     procedure :: struct2unstruct => geom_struct2unstruct
     procedure :: unstruct2struct => geom_unstruct2struct
+    procedure :: uv2h_init => geom_uv2h_init
     procedure :: write => geom_write
 end type soca_geom
 
@@ -201,6 +212,9 @@ subroutine geom_gridgen(self)
 
   ! Get Rossby Radius
   call geom_rossby_radius(self)
+
+  ! Compute interp weight
+  call self%uv2h_init()
 
   ! Output to file
   call geom_write(self)
@@ -554,6 +568,20 @@ subroutine geom_unstruct2struct(self, dx_struct, dx_unstruct)
   deallocate(dx_unstruct)
 
 end subroutine geom_unstruct2struct
+
+! ------------------------------------------------------------------------------
+
+subroutine geom_uv2h_init(self)
+  class(soca_geom),                  intent(inout) :: self
+print *,'11111111111111111111111111'
+call horiz_interp_init()
+print *,'222222222222222222222222222'
+  call horiz_interp_new(self%u2h_wgt, real(self%lon, 8), real(self%lat, 8), &
+                                                & real(self%lonu, 8), real(self%latu, 8))
+!!$  call horiz_interp_bilinear_new_2d(self%v2h_wgt, real(self%lon, 8), real(self%lat, 8), &
+!!$                                                & real(self%lonu, 8), real(self%latu, 8))
+
+end subroutine geom_uv2h_init
 
 ! ------------------------------------------------------------------------------
 

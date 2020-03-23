@@ -94,7 +94,8 @@ contains
   procedure :: schur    => soca_fields_schur
   procedure :: sub      => soca_fields_sub
   procedure :: zeros    => soca_fields_zeros
-  procedure :: rotate    => soca_fields_rotate
+  procedure :: rotate   => soca_fields_rotate
+  procedure :: uv2h     => soca_fields_uv2h
 
   ! IO
   procedure :: from_ug   => soca_fields_from_ug
@@ -1573,6 +1574,13 @@ subroutine soca_fields_rotate(self, coordinate, uvars, vvars)
     call mpp_update_domains(vocn%val, self%geom%Domain%mpp_domain)
   end do
 end subroutine soca_fields_rotate
+
+! ------------------------------------------------------------------------------
+!> Interpolater from uv-grid to h-grid
+subroutine soca_fields_uv2h(self)
+  class(soca_fields), intent(inout) :: self
+
+end subroutine soca_fields_uv2h
 
 ! ------------------------------------------------------------------------------
 
