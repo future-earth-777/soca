@@ -16,14 +16,14 @@ _file: &_file
   date: *date
   basename: ./Data/
   remap_filename: ./INPUT/MOM.res.nc
-  
-variables: &soca_vars [cicen, hicen, socn, tocn, ssh, hocn]
+
+variables: &soca_vars [cicen, hicen, socn, tocn, ssh, hocn, mld, layer_depth]
 
 Covariance:
   covariance: hybrid
   static_weight: 0.5
   ensemble_weight: 0.5
-  static: 
+  static:
    covariance: SocaError
    prefix: soca
    datadir: ./bump
@@ -32,7 +32,7 @@ Covariance:
    lsqrt: 1
    mpicom: 2
    date: *date
-   variables: &soca_vars [cicen, hicen, socn, tocn, ssh, hocn]
+   variables: *soca_vars
 
    variable_changes:
 

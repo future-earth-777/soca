@@ -5,7 +5,7 @@ Geometry:
   read_soca_grid: grid
 
 Variables:
-  variables: &soca_vars [cicen, hicen, hocn, socn, tocn, ssh]
+  variables: &soca_vars [cicen, hicen, hocn, socn, tocn, ssh, mld, layer_depth]
 
 State:
   read_from_file: 1

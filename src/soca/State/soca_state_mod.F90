@@ -20,9 +20,6 @@ type, public, extends(soca_fields) :: soca_state
 
 contains
 
-  ! constructors / destructors
-  procedure :: create => soca_state_create
-
   ! interactions with increment
   procedure :: diff_incr=> soca_state_diff_incr
   procedure :: add_incr => soca_state_add_incr
@@ -35,21 +32,6 @@ end type
 !------------------------------------------------------------------------------
 contains
 !------------------------------------------------------------------------------
-
-!------------------------------------------------------------------------------
-subroutine soca_state_create(self, geom, vars)
-  class(soca_state),         intent(inout) :: self
-  type(soca_geom),  pointer, intent(inout) :: geom
-  type(oops_variables),      intent(inout) :: vars
-
-  ! additional internal fields need to be created
-  call vars%push_back("mld")
-  call vars%push_back("layer_depth")
-
-  ! continue with normal fields initialization
-  call self%soca_fields%create(geom, vars)
-end subroutine soca_state_create
-
 
 ! ------------------------------------------------------------------------------
 !> Rotate horizontal vector

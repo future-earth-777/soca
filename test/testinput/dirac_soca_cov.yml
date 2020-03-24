@@ -11,7 +11,7 @@ initial:
   ocn_filename: MOM.res.nc
   ice_filename: ice_model.res.nc
 
-variables: &soca_vars [cicen, hicen, socn, tocn, ssh, hocn]
+variables: &soca_vars [cicen, hicen, socn, tocn, ssh, hocn, mld, layer_depth]
 
 Covariance:
   covariance: SocaError
@@ -22,7 +22,7 @@ Covariance:
   mpicom: 2
   strategy: specific_univariate
   date: *date
-  variables: &soca_vars [cicen, hicen, socn, tocn, ssh, hocn]
+  variables: *soca_vars
 
   variable_changes:
 

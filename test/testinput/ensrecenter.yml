@@ -11,7 +11,7 @@ _file: &_file
   remap_filename: ./INPUT/MOM.res.nc
 
 Variables:
-  variables:  &soca_vars [cicen, hicen, socn, tocn, ssh, hocn]
+  variables:  &soca_vars [cicen, hicen, socn, tocn, ssh, hocn, mld, layer_depth]
 
 
 Center:
