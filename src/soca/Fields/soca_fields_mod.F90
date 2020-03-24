@@ -195,6 +195,7 @@ subroutine soca_fields_init_vars(self, vars)
       self%fields(i)%mask => self%geom%mask2d
     case ('sw', 'lhf', 'shf', 'lw', 'us')
       nz = 1
+      self%fields(i)%mask => self%geom%mask2d ! TODO, should this really be masked??
     case default
       call abor1_ftn('soca_fields::create(): unknown field '// self%fields(i)%name)
     end select
@@ -336,7 +337,7 @@ subroutine soca_fields_copy(self, rhs)
   end if
 
   ! copy values from rhs to self, only if the variable exists
-  !  in self
+  !  in both self and rhs
   do i=1,size(self%fields)
     call rhs%get(self%fields(i)%name, rhs_fld)
     call self%fields(i)%copy(rhs_fld)
@@ -481,7 +482,7 @@ end subroutine soca_fields_axpy
 !> calculate the global dot product of two sets of fields
 subroutine soca_fields_dotprod(fld1,fld2,zprod)
   class(soca_fields),     intent(in) :: fld1
-  class(soca_fields),      intent(in) :: fld2
+  class(soca_fields),     intent(in) :: fld2
   real(kind=kind_real),  intent(out) :: zprod
 
   real(kind=kind_real) :: local_zprod
@@ -492,7 +493,7 @@ subroutine soca_fields_dotprod(fld1,fld2,zprod)
   ! make sure fields are same shape
   call fld1%check_congruent(fld2)
 
-  ! loop over (almost) all fields
+  ! loop over all fields
   local_zprod = 0.0_kind_real
   do n=1,size(fld1%fields)
     field1 => fld1%fields(n)
@@ -500,20 +501,16 @@ subroutine soca_fields_dotprod(fld1,fld2,zprod)
 
     ! determine which fields to use
     ! TODO: use all fields (this will change answers in the ctests)
-    select case(field1%name)
-    case ("tocn","socn","ssh","uocn","vocn",&
-          "hicen", "sw", "lhf", "shf", "lw", "us", "cicen")
-      continue
-    case default
-      cycle
-    end select
 
     ! add the given field to the dot product (only using the compute domain)
     do ii = fld1%geom%isc, fld1%geom%iec
       do jj = fld1%geom%jsc, fld1%geom%jec
-        ! TODO masking is wrong, but this will change answers, should be:
-        ! if (field1%masked .and. .not. fld1%geom%mask2d(ii,jj) == 1 ) cycle
-        if (.not. fld1%geom%mask2d(ii,jj) == 1 ) cycle
+        ! masking
+        if (associated(field1%mask)) then
+          if (field1%mask(ii,jj) < 1) cycle
+        end if
+
+        ! add to dot product
         do kk=1,field1%nz
           local_zprod = local_zprod + field1%val(ii,jj,kk) * field2%val(ii,jj,kk)
         end do
@@ -837,26 +834,20 @@ subroutine soca_fields_gpnorm(fld, nf, pstat)
   isc = fld%geom%isc ; iec = fld%geom%iec
   jsc = fld%geom%jsc ; jec = fld%geom%jec
 
-  ! get the number of ocean grid cells
-  local_ocn_count = sum(fld%geom%mask2d(isc:iec, jsc:jec))
-  call f_comm%allreduce(local_ocn_count, ocn_count, fckit_mpi_sum())
-  mask = fld%geom%mask2d(isc:iec,jsc:jec) > 0.0
-
-  ! calculate global min, max, mean for each field
+    ! calculate global min, max, mean for each field
   do jj=1, size(fld%fields)
-
-    ! get local min/max/sum of each variable
-    ! TODO: use all fields (this will change answers in the ctests)
-    select case(fld%fields(jj)%name)
-    case("tocn", "socn", "ssh", "hocn", "uocn", "vocn", &
-         "sw", "lw", "lhf", "shf", "us", "hicen", "hsnon", "cicen")
-      continue
-    case default
-      cycle
-    end select
-
-    ! TODO only mask fields that should be masked (will change answers)
     call fld%get(fld%fields(jj)%name, field)
+
+    ! get the mask and the total number of ocean grid cells
+    if (.not. associated(field%mask)) then
+      mask = .true.
+    else
+      mask = field%mask(isc:iec, jsc:jec) > 0.0
+    end if
+    local_ocn_count = count(mask)
+    call f_comm%allreduce(local_ocn_count, ocn_count, fckit_mpi_sum())
+
+    ! calculated stats
     call fldinfo(field%val(isc:iec,jsc:jec,:), mask, tmp)
 
     ! calculate global min/max/mean

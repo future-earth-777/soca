@@ -177,6 +177,7 @@ subroutine interp(fld, locs, vars, geoval, horiz_interp, horiz_interp_masked)
     ! Extract fld3d from field
     masked = .true. ! by default fields are assumed to need a land mask applied,
                     ! (Currently only sea area fraction is unmasked)
+    ! TODO, use the correct mask (for U/V)
 
     ! if we are lucky and this variable is a non-derived type, check the fields structure
     do n=1,size(fld%fields)
