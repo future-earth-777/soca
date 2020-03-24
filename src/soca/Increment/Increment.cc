@@ -243,7 +243,7 @@ namespace soca {
     std::vector<double> zstat(3*nf);
     soca_increment_gpnorm_f90(keyFlds_, nf, zstat[0]);
     for (int jj = 0; jj < nf; ++jj) {
-      os << std::endl << std::right << std::setw(7) << vars_[jj]
+      os << std::endl << std::right << std::setw(12) << vars_[jj]
          << "   min="  <<  std::fixed << std::setw(12) <<
                            std::right << zstat[3*jj]
          << "   max="  <<  std::fixed << std::setw(12) <<
