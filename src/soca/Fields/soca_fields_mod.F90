@@ -82,6 +82,8 @@ contains
   procedure :: mul      => soca_fields_mul
   procedure :: sub      => soca_fields_sub
   procedure :: zeros    => soca_fields_zeros
+
+  ! misc
   procedure :: rotate   => soca_fields_rotate
   procedure :: uv2h     => soca_fields_uv2h
 

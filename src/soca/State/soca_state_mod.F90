@@ -27,9 +27,6 @@ contains
   procedure :: diff_incr=> soca_state_diff_incr
   procedure :: add_incr => soca_state_add_incr
 
-  ! misc
-  procedure :: rotate => soca_state_rotate
-
 end type
 
 !------------------------------------------------------------------------------
@@ -49,63 +46,6 @@ subroutine soca_state_create(self, geom, vars)
   ! continue with normal fields initialization
   call self%soca_fields%create(geom, vars)
 end subroutine soca_state_create
-
-
-! ------------------------------------------------------------------------------
-!> Rotate horizontal vector
-subroutine soca_state_rotate(self, coordinate, uvars, vvars)
-  class(soca_state),  intent(inout) :: self
-  character(len=*),      intent(in) :: coordinate ! "north" or "grid"
-  type(oops_variables),  intent(in) :: uvars
-  type(oops_variables),  intent(in) :: vvars
-
-  integer :: z, i
-  type(soca_field), pointer :: uocn, vocn
-  real(kind=kind_real), allocatable :: un(:,:,:), vn(:,:,:)
-  character(len=64) :: u_names, v_names
-
-  do i=1, uvars%nvars()
-    ! get (u, v) pair and make a copy
-    u_names = trim(uvars%variable(i))
-    v_names = trim(vvars%variable(i))
-    if (self%has(u_names).and.self%has(v_names)) then
-      call fckit_log%info("rotating "//trim(u_names)//" "//trim(v_names))
-      call self%get(u_names, uocn)
-      call self%get(v_names, vocn)
-    else
-      ! Skip if no pair found.
-      call fckit_log%info("not rotating "//trim(u_names)//" "//trim(v_names))
-      cycle
-    end if
-    allocate(un(size(uocn%val,1),size(uocn%val,2),size(uocn%val,3)))
-    allocate(vn(size(uocn%val,1),size(uocn%val,2),size(uocn%val,3)))
-    un = uocn%val
-    vn = vocn%val
-
-    select case(trim(coordinate))
-    case("north")   ! rotate (uocn, vocn) to geo north
-      do z=1,uocn%nz
-        uocn%val(:,:,z) = &
-        (self%geom%cos_rot(:,:)*un(:,:,z) + self%geom%sin_rot(:,:)*vn(:,:,z)) * uocn%mask(:,:)
-        vocn%val(:,:,z) = &
-        (- self%geom%sin_rot(:,:)*un(:,:,z) + self%geom%cos_rot(:,:)*vn(:,:,z)) * vocn%mask(:,:)
-      end do
-    case("grid")
-      do z=1,uocn%nz
-        uocn%val(:,:,z) = &
-        (self%geom%cos_rot(:,:)*un(:,:,z) - self%geom%sin_rot(:,:)*vn(:,:,z)) * uocn%mask(:,:)
-        vocn%val(:,:,z) = &
-        (self%geom%sin_rot(:,:)*un(:,:,z) + self%geom%cos_rot(:,:)*vn(:,:,z)) * vocn%mask(:,:)
-      end do
-    end select
-    deallocate(un, vn)
-
-    ! update halos
-    call uocn%update_halo(self%geom)
-    call vocn%update_halo(self%geom)
-  end do
-end subroutine soca_state_rotate
-
 
 ! ------------------------------------------------------------------------------
 !> add a set of increments to the set of fields
