@@ -31,8 +31,10 @@ use fckit_geometry_module, only: sphere_distance
 use horiz_interp_mod, only : horiz_interp_new, horiz_interp, horiz_interp_type
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_del
 
-use horiz_interp_bilinear_mod!,  only: horiz_interp_bilinear_init, horiz_interp_bilinear
+use horiz_interp_spherical_mod
+!use horiz_interp_bilinear_mod!,  only: horiz_interp_bilinear_init, horiz_interp_bilinear
 !use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_new, horiz_interp_bilinear_del
+use tools_const, only: deg2rad
 
 implicit none
 
@@ -573,13 +575,15 @@ end subroutine geom_unstruct2struct
 
 subroutine geom_uv2h_init(self)
   class(soca_geom),                  intent(inout) :: self
-print *,'11111111111111111111111111'
-call horiz_interp_init()
-print *,'222222222222222222222222222'
-  call horiz_interp_new(self%u2h_wgt, real(self%lon, 8), real(self%lat, 8), &
-                                                & real(self%lonu, 8), real(self%latu, 8))
-!!$  call horiz_interp_bilinear_new_2d(self%v2h_wgt, real(self%lon, 8), real(self%lat, 8), &
-!!$                                                & real(self%lonu, 8), real(self%latu, 8))
+
+  logical :: no_crash = .true.
+
+  call horiz_interp_spherical_new(self%u2h_wgt, &
+       & real(deg2rad*self%lonu(self%isd:self%ied,self%jsd:self%jed), 8), &
+       & real(deg2rad*self%latu(self%isd:self%ied,self%jsd:self%jed), 8), &
+       & real(deg2rad*self%lon(self%isc:self%iec,self%jsc:self%jec), 8), &
+       & real(deg2rad*self%lat(self%isc:self%iec,self%jsc:self%jec), 8))
+
 
 end subroutine geom_uv2h_init
 
