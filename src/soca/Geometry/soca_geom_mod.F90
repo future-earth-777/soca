@@ -61,7 +61,9 @@ type :: soca_geom
     real(kind=kind_real), allocatable, dimension(:,:) :: mask2dv   !< v        "   . 0 = land 1 = ocean
     real(kind=kind_real), allocatable, dimension(:,:) :: cell_area
     type(horiz_interp_type) :: u2h_wgt
+    type(horiz_interp_type) :: h2u_wgt
     type(horiz_interp_type) :: v2h_wgt
+    type(horiz_interp_type) :: h2v_wgt
     real(kind=kind_real), allocatable, dimension(:,:) :: rossby_radius
     logical :: save_local_domain = .false. ! If true, save the local geometry for each pe.
     contains
@@ -578,12 +580,33 @@ subroutine geom_uv2h_init(self)
 
   logical :: no_crash = .true.
 
+  ! Compute weights for u to h interp
   call horiz_interp_spherical_new(self%u2h_wgt, &
        & real(deg2rad*self%lonu(self%isd:self%ied,self%jsd:self%jed), 8), &
        & real(deg2rad*self%latu(self%isd:self%ied,self%jsd:self%jed), 8), &
        & real(deg2rad*self%lon(self%isc:self%iec,self%jsc:self%jec), 8), &
        & real(deg2rad*self%lat(self%isc:self%iec,self%jsc:self%jec), 8))
 
+  ! Compute weights for h to u interp
+  call horiz_interp_spherical_new(self%h2u_wgt, &
+       & real(deg2rad*self%lon(self%isd:self%ied,self%jsd:self%jed), 8), &
+       & real(deg2rad*self%lat(self%isd:self%ied,self%jsd:self%jed), 8), &
+       & real(deg2rad*self%lonu(self%isc:self%iec,self%jsc:self%jec), 8), &
+       & real(deg2rad*self%latu(self%isc:self%iec,self%jsc:self%jec), 8))
+
+  ! Compute weights for v to h interp
+  call horiz_interp_spherical_new(self%v2h_wgt, &
+       & real(deg2rad*self%lonv(self%isd:self%ied,self%jsd:self%jed), 8), &
+       & real(deg2rad*self%latv(self%isd:self%ied,self%jsd:self%jed), 8), &
+       & real(deg2rad*self%lon(self%isc:self%iec,self%jsc:self%jec), 8), &
+       & real(deg2rad*self%lat(self%isc:self%iec,self%jsc:self%jec), 8))
+
+  ! Compute weights for h to v interp
+  call horiz_interp_spherical_new(self%h2v_wgt, &
+       & real(deg2rad*self%lon(self%isd:self%ied,self%jsd:self%jed), 8), &
+       & real(deg2rad*self%lat(self%isd:self%ied,self%jsd:self%jed), 8), &
+       & real(deg2rad*self%lonv(self%isc:self%iec,self%jsc:self%jec), 8), &
+       & real(deg2rad*self%latv(self%isc:self%iec,self%jsc:self%jec), 8))
 
 end subroutine geom_uv2h_init
 
