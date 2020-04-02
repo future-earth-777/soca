@@ -22,7 +22,8 @@ list( APPEND soca_test_input
   testinput/geometryatm.yml
   testinput/gridgen.yml
   testinput/hofx_3d.yml
-  testinput/hofx_3dcrtm.yml
+  testinput/gmi_hofx_3dcrtm.yml
+  testinput/smap_hofx_3dcrtm.yml
   testinput/hofx_4d.yml
   testinput/increment.yml
   testinput/linearmodel.yml
@@ -64,7 +65,8 @@ list( APPEND soca_test_ref
   testref/forecast_identity.test
   testref/forecast_mom6.test
   testref/hofx_3d.test
-  testref/hofx_3dcrtm.test
+  testref/gmi_hofx_3dcrtm.test
+  testref/smap_hofx_3dcrtm.test
   testref/hofx_4d.test
   testref/parameters_bump_cov_lct.test
 )
@@ -101,6 +103,8 @@ list( APPEND soca_obs
   Data/Obs/sst.nc
   Data/Obs/gmi_gpm_geoval.nc
   Data/Obs/gmi_gpm_obs.nc
+  Data/Obs/smap_geoval.nc
+  Data/Obs/smap_obs.nc
 )
 
 # Create Data directory for test input/output and symlink all files
@@ -166,6 +170,8 @@ if( ${CRTM_FOUND} )
   list( APPEND crtm_coef
     SpcCoeff/Little_Endian/gmi_gpm.SpcCoeff.bin
     TauCoeff/ODPS/Little_Endian/gmi_gpm.TauCoeff.bin
+    SpcCoeff/Little_Endian/radiometer_smap.SpcCoeff.bin
+    TauCoeff/ODPS/Little_Endian/radiometer_smap.TauCoeff.bin
     CloudCoeff/Little_Endian/CloudCoeff.bin
     AerosolCoeff/Little_Endian/AerosolCoeff.bin
     EmisCoeff/MW_Water/Little_Endian/FASTEM6.MWwater.EmisCoeff.bin
@@ -501,7 +507,10 @@ soca_add_test( NAME hofx_3d
                TEST_DEPENDS test_soca_gridgen )
 
 if( ${CRTM_FOUND} )
- soca_add_test( NAME hofx_3dcrtm
+ soca_add_test( NAME gmi_hofx_3dcrtm
+                EXE  soca_hofx_nomodel.x
+                TEST_DEPENDS test_soca_gridgen )
+ soca_add_test( NAME smap_hofx_3dcrtm
                 EXE  soca_hofx_nomodel.x
                 TEST_DEPENDS test_soca_gridgen )
 endif()
