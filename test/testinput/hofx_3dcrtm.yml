@@ -13,7 +13,7 @@ Geometry:
     ObsSpace:
       name: None
       ObsDataIn:  {obsfile: ./Data/gmi_gpm_obs.nc}
-      ObsDataOut:  {obsfile: ./Data/atm00_out.nc}
+      ObsDataOut:  {obsfile: ./Data/atm_out.nc}
       simulate:   {variables: [ None ]}
     date_begin: 2018-04-14T00:00:00Z
     date_end: 2018-04-16T00:00:00Z
