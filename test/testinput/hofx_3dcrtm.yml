@@ -13,7 +13,7 @@ Geometry:
     ObsSpace:
       name: None
       ObsDataIn:  {obsfile: ./Data/gmi_gpm_obs.nc}
-      ObsDataOut:  {obsfile: ./Data/atm_out.nc}
+      ObsDataOut:  {obsfile: ./Data/atm00_out.nc}
       simulate:   {variables: [ None ]}
     date_begin: 2018-04-14T00:00:00Z
     date_end: 2018-04-16T00:00:00Z
@@ -63,8 +63,16 @@ Assimilation Window:
 
 Observations:
   ObsTypes:
-
-  - ObsOperator:
+  - ObsSpace:
+      name: gmi_gpm
+      ObsDataIn:
+        obsfile: Data/gmi_gpm_obs.nc
+      ObsDataOut:
+        obsfile: Data/gmi_out.nc
+      simulate:
+        variables: [brightness_temperature]
+        channels: 1-13
+    ObsOperator:
       name: CRTM
       Absorbers: [H2O,O3,CO2]
       Clouds: [Water, Ice]
@@ -76,10 +84,3 @@ Observations:
         Sensor_ID: gmi_gpm
         EndianType: little_endian
         CoefficientPath: Data/
-    ObsSpace:
-      name: gmi_gpm
-      ObsDataIn:
-        obsfile: Data/gmi_gpm_obs.nc
-      simulate:
-        variables: [brightness_temperature]
-        channels: 1-13
