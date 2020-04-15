@@ -105,7 +105,7 @@ subroutine soca_increment_getpoint(self, geoiter, values)
   do ff = 1, size(self%fields)
     field => self%fields(ff)
     select case(field%name)
-    case("tocn", "socn", "ssh", "hocn", "cicen", "hicen","hsnon")
+    case("tocn", "socn", "ssh", "hocn", "uocn", "vocn", "cicen", "hicen","hsnon")
       nz = field%nz
       values(ii+1:ii+nz) = field%val(geoiter%iind, geoiter%jind,:)
       ii = ii + nz
@@ -129,7 +129,7 @@ subroutine soca_increment_setpoint(self, geoiter, values)
   do ff = 1, size(self%fields)
     field => self%fields(ff)
     select case(field%name)
-    case("tocn", "socn", "ssh", "hocn", "cicen", "hicen","hsnon")
+    case("tocn", "socn", "ssh", "hocn", "uocn", "vocn", "cicen", "hicen","hsnon")
       nz = field%nz
       field%val(geoiter%iind, geoiter%jind,:) = values(ii+1:ii+nz)
       ii = ii + nz
@@ -196,6 +196,10 @@ subroutine soca_increment_dirac(self, f_conf)
       call self%get("cicen", field)
     case (5)
       call self%get("hicen", field)
+    case (6)
+      call self%get("uocn", field)
+    case (7)
+      call self%get("vocn", field)
     case default
       ! TODO print error that out of range
     end select
@@ -246,7 +250,7 @@ subroutine ug_size(self, ug)
      ug%grid(1)%nl0 = self%geom%nzo
 
      ! Set number of variables
-     ug%grid(1)%nv = self%geom%ncat*2 + 3
+     ug%grid(1)%nv = self%geom%ncat*2 + 5
   else
      ! Set number of levels
      ug%grid(1)%nl0 = self%geom%nzo
@@ -337,7 +341,7 @@ subroutine soca_increment_to_ug(self, ug, its)
   do i=1,size(self%fields)
     field => self%fields(i)
     select case(field%name)
-    case ('tocn','socn')
+    case ('tocn','socn','uocn','vocn')
       do z = 1, field%nz
         ug%grid(igrid)%fld(1:ni*nj, z, jk, its) = &
           &reshape( field%val(isc:iec, jsc:jec,z), (/ug%grid(igrid)%nmga/) )
@@ -396,7 +400,7 @@ subroutine soca_increment_from_ug(self, ug, its)
   do i=1,size(self%fields)
     field => self%fields(i)
     select case(field%name)
-    case ("tocn", "socn")
+    case ('tocn','socn','uocn','vocn')
       do z = 1, field%nz
         field%val(isc:iec, jsc:jec,z) = &
           &reshape( ug%grid(igrid)%fld(1:ni*nj, z, jk, its), (/ni, nj/) )

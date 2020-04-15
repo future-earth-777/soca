@@ -146,6 +146,8 @@ namespace soca {
   // -----------------------------------------------------------------------------
   State & State::operator+=(const Increment & dx) {
     ASSERT(validTime() == dx.validTime());
+    std::cout << "=========== dx ===============" << std::endl;
+    std::cout << dx << std::endl;
     soca_state_add_incr_f90(toFortran(), dx.toFortran());
     return *this;
   }

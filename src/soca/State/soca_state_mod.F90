@@ -137,26 +137,26 @@ subroutine soca_state_add_incr(self, rhs)
   ! TODO Move inside of the balance operator.
   !      Will need to be removed when assimilating ocean current or when using
   !      ensemble derived increments (ensemble cross-covariances that include currents)
-  if (self%has('hocn').and.self%has('tocn').and.self%has('socn').and.&
-      self%has('uocn').and.self%has('vocn')) then
-     ! Get necessary background fields needed to compute geostrophic perturbations
-     call self%get("tocn", t)
-     call self%get("socn", s)
-     call self%get("hocn", h)
-
-     ! Make a copy of the increment and get the needed pointers
-     !call incr_geo%copy(rhs)
-     call incr%get("tocn", dt)
-     call incr%get("socn", ds)
-     call incr%get("uocn", du)
-     call incr%get("vocn", dv)
-
-     ! Compute the geostrophic increment
-     call geostrophy%setup(self%geom, h%val)
-     call geostrophy%tl(h%val, t%val, s%val,&
-          dt%val, ds%val, du%val, dv%val, self%geom)
-     call geostrophy%delete()
-  end if
+!!$  if (self%has('hocn').and.self%has('tocn').and.self%has('socn').and.&
+!!$      self%has('uocn').and.self%has('vocn')) then
+!!$     ! Get necessary background fields needed to compute geostrophic perturbations
+!!$     call self%get("tocn", t)
+!!$     call self%get("socn", s)
+!!$     call self%get("hocn", h)
+!!$
+!!$     ! Make a copy of the increment and get the needed pointers
+!!$     !call incr_geo%copy(rhs)
+!!$     call incr%get("tocn", dt)
+!!$     call incr%get("socn", ds)
+!!$     call incr%get("uocn", du)
+!!$     call incr%get("vocn", dv)
+!!$
+!!$     ! Compute the geostrophic increment
+!!$     call geostrophy%setup(self%geom, h%val)
+!!$     call geostrophy%tl(h%val, t%val, s%val,&
+!!$          dt%val, ds%val, du%val, dv%val, self%geom)
+!!$     call geostrophy%delete()
+!!$  end if
 
   ! Colocate increment fields with h-grid
   call incr%colocate('h')

@@ -4,7 +4,7 @@ resolution:
   num_sno_lev: 1
   read_soca_grid: grid
 
-variables: &soca_vars [cicen, hicen, socn, tocn, ssh, hocn]
+variables: &soca_vars [cicen, hicen, socn, tocn, ssh, hocn, uocn, vocn]
 
 background:
   read_from_file: 1

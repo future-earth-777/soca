@@ -16,14 +16,14 @@ _file: &_file
   date: *date
   basename: ./Data/
   remap_filename: ./INPUT/MOM.res.nc
-  
-variables: &soca_vars [cicen, hicen, socn, tocn, ssh, hocn]
+
+variables: &soca_vars [cicen, hicen, socn, tocn, ssh, hocn, uocn, vocn]
 
 Covariance:
   covariance: hybrid
   static_weight: 0.5
   ensemble_weight: 0.5
-  static: 
+  static:
    covariance: SocaError
    prefix: soca
    datadir: ./bump
@@ -32,7 +32,7 @@ Covariance:
    lsqrt: 1
    mpicom: 2
    date: *date
-   variables: &soca_vars [cicen, hicen, socn, tocn, ssh, hocn]
+   variables: &soca_vars [cicen, hicen, socn, tocn, ssh, hocn, uocn, vocn]
 
    variable_changes:
 
@@ -89,20 +89,20 @@ Covariance:
    variables: *soca_vars
    members:
    - <<: *_file
-     ocn_filename: ocn.pert.ens.1.2018-04-15T00:00:00Z.PT0S.nc
-     ice_filename: ice.pert.ens.1.2018-04-15T00:00:00Z.PT0S.nc
+     ocn_filename: ocn.pert.ens.1.2018-04-15T00:00:00Z.PT6H.nc
+     ice_filename: ice.pert.ens.1.2018-04-15T00:00:00Z.PT6H.nc
 
    - <<: *_file
-     ocn_filename: ocn.pert.ens.2.2018-04-15T00:00:00Z.PT0S.nc
-     ice_filename: ice.pert.ens.2.2018-04-15T00:00:00Z.PT0S.nc
+     ocn_filename: ocn.pert.ens.2.2018-04-15T00:00:00Z.PT6H.nc
+     ice_filename: ice.pert.ens.2.2018-04-15T00:00:00Z.PT6H.nc
 
    - <<: *_file
-     ocn_filename: ocn.pert.ens.3.2018-04-15T00:00:00Z.PT0S.nc
-     ice_filename: ice.pert.ens.3.2018-04-15T00:00:00Z.PT0S.nc
+     ocn_filename: ocn.pert.ens.3.2018-04-15T00:00:00Z.PT6H.nc
+     ice_filename: ice.pert.ens.3.2018-04-15T00:00:00Z.PT6H.nc
 
    - <<: *_file
-     ocn_filename: ocn.pert.ens.4.2018-04-15T00:00:00Z.PT0S.nc
-     ice_filename: ice.pert.ens.4.2018-04-15T00:00:00Z.PT0S.nc
+     ocn_filename: ocn.pert.ens.4.2018-04-15T00:00:00Z.PT6H.nc
+     ice_filename: ice.pert.ens.4.2018-04-15T00:00:00Z.PT6H.nc
 
    localization:
     timeslots: ['2018-04-15T00:00:00Z']
@@ -122,7 +122,7 @@ dirac:
   ixdir: [1, 17, 41, 31, 51, 63, 81, 16, 43]
   iydir: [8, 21, 19, 33, 29, 26, 16,  5, 43]
   izdir: [1,  5,  1,  1,  1,  1,  1,  1,  1]
-  ifdir: [1,  1,  3,  2,  1,  1,  1,  5,  5]
+  ifdir: [6,  7,  3,  2,  1,  1,  1,  5,  5]
 
 output_B:
   datadir: Data

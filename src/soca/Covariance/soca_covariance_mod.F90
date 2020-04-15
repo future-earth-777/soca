@@ -100,7 +100,7 @@ subroutine soca_cov_setup(self, f_conf, geom, bkg, vars)
      select case(trim(self%vars%variable(ivar)))
      case('cicen','hicen')
         init_seaice = .true.
-     case('tocn', 'socn', 'ssh')
+     case('tocn', 'socn', 'ssh','uocn','vocn')
         init_ocean = .true.
      end select
   end do
@@ -156,7 +156,7 @@ subroutine soca_cov_C_mult(self, dx)
     ! TODO remove the hardcoded variables
     ! ice or ocean convolution ?
     select case(field%name)
-    case ('tocn', 'socn', 'ssh', 'sw', 'lw', 'lhf', 'shf', 'us')
+    case ('tocn', 'socn', 'ssh', 'sw', 'lw', 'lhf', 'shf', 'us','uocn','vocn')
       conv => self%ocean_conv(1)
     case ('hicen','cicen')
       conv => self%seaice_conv(1)
