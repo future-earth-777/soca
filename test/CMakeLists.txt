@@ -4,6 +4,7 @@ list( APPEND soca_test_input
   testinput/3dvar_godas.yml
   testinput/3dvar_soca.yml
   testinput/3dvarfgat.yml
+  testinput/addincrement.yml
   testinput/checkpointmodel.yml
   testinput/convertstate.yml
   testinput/dirac_bump_cov.yml
@@ -20,12 +21,16 @@ list( APPEND soca_test_input
   testinput/geometry.yml
   testinput/geometry_iterator.yml
   testinput/geometryatm.yml
+  testinput/getvalues.yml
   testinput/gridgen.yml
   testinput/hofx_3d.yml
   testinput/hofx_3dcrtm.yml
   testinput/hofx_4d.yml
   testinput/increment.yml
+  testinput/letkf.yml
+  testinput/lineargetvalues.yml
   testinput/linearmodel.yml
+  testinput/makeobs.yml
   testinput/marine2ioda.yml
   testinput/model.yml
   testinput/parameters_bump_cov_lct.yml
@@ -50,6 +55,7 @@ list( APPEND soca_test_ref
   testref/3dvar_godas.test
   testref/3dvar_soca.test
   testref/3dvarfgat.test
+  testref/addincrement.test
   testref/checkpointmodel.test
   testref/convertstate.test
   testref/dirac_bump_cov.test
@@ -66,6 +72,8 @@ list( APPEND soca_test_ref
   testref/hofx_3d.test
   testref/hofx_3dcrtm.test
   testref/hofx_4d.test
+  testref/letkf.test
+  testref/makeobs.test
   testref/parameters_bump_cov_lct.test
 )
 
@@ -358,6 +366,11 @@ soca_add_test( NAME enspert
 #               EXE  soca_staticbinit.x
 #               TEST_DEPENDS test_soca_gridgen)
 
+# Generate synthetic observations
+soca_add_test( NAME makeobs
+               EXE  soca_makeobs.x
+               NOTRAPFPE
+               TEST_DEPENDS test_soca_gridgen )
 
 # Tests of class interfaces
 #-------------------------------------------------------------------------------
@@ -378,6 +391,10 @@ soca_add_test( NAME state
                SRC  TestState.cc
                TEST_DEPENDS test_soca_gridgen )
 
+soca_add_test( NAME getvalues
+               SRC  TestGetValues.cc
+               TEST_DEPENDS test_soca_gridgen )
+
 soca_add_test( NAME model
                SRC  TestModel.cc
                NOTRAPFPE
@@ -390,6 +407,10 @@ soca_add_test( NAME modelaux
 
 soca_add_test( NAME increment
                SRC  TestIncrement.cc
+               TEST_DEPENDS test_soca_gridgen )
+
+soca_add_test( NAME lineargetvalues
+               SRC  TestLinearGetValues.cc
                TEST_DEPENDS test_soca_gridgen )
 
 soca_add_test( NAME errorcovariance
@@ -530,8 +551,14 @@ soca_add_test( NAME 3dvar_soca
 
 soca_add_test( NAME 3dvar_godas
                EXE  soca_3dvar.x
-               TOL  1e-8 0
+               TOL  2e-6 0
                TEST_DEPENDS test_soca_static_socaerror_init )
+
+# TODO: Remove NOCOMPARE when oops PR#585 is merged
+soca_add_test( NAME addincrement
+               EXE  soca_addincrement.x
+               NOCOMPARE
+               TEST_DEPENDS 3dvar_godas )
 
 soca_add_test( NAME 3dvarfgat
                EXE  soca_3dvar.x
@@ -541,7 +568,7 @@ soca_add_test( NAME 3dvarfgat
 
 soca_add_test( NAME 3dhyb
                EXE  soca_3dvar.x
-               TOL  1e-8 0
+               TOL  2e-7 0
                NOTRAPFPE
                TEST_DEPENDS test_soca_static_socaerror_init
                             test_soca_parameters_bump_loc )
@@ -556,6 +583,11 @@ soca_add_test( NAME 3dhybfgat
 #                EXE  soca_3dvar.x
 #                TEST_DEPENDS test_soca_static_socaerror_init
 #                             test_soca_parameters_bump_loc )
+
+soca_add_test( NAME letkf
+               EXE  soca_letkf.x
+               NOTRAPFPE
+               TEST_DEPENDS test_soca_enspert )
 
 
 # restart checkpointing

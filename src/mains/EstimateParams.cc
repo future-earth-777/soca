@@ -11,13 +11,12 @@
 
 #include "soca/Traits.h"
 #include "soca/Transforms/instantiateBalanceOpFactory.h"
-#include "oops/runs/EstimateParams.h"
+#include "saber/oops/EstimateParams.h"
 #include "oops/runs/Run.h"
 
 int main(int argc,  char ** argv) {
   soca::instantiateBalanceOpFactory();
   oops::Run run(argc, argv);
-  oops::EstimateParams<soca::Traits> dir;
-  run.execute(dir);
-  return 0;
+  saber::EstimateParams<soca::Traits> dir;
+  return run.execute(dir);
 }

@@ -24,7 +24,7 @@ endfunction()
 ecbuild_add_library( TARGET   soca
                      SOURCES ${soca_src_files}
                      LIBS     ${LAPACK_LIBRARIES} ${NETCDF_LIBRARIES}
-                              eckit eckit_mpi fckit oops ioda ufo fms mom6
+                              eckit eckit_mpi fckit oops saber ioda ufo fms mom6
                      INSTALL_HEADERS LISTED
                      LINKER_LANGUAGE ${SOCA_LINKER_LANGUAGE}
                     )
@@ -34,7 +34,7 @@ add_subdirectory(Covariance)
 add_subdirectory(Fields)
 add_subdirectory(Geometry)
 add_subdirectory(GeometryIterator)
-add_subdirectory(GetValuesTraj)
+add_subdirectory(GetValues)
 add_subdirectory(Increment)
 add_subdirectory(LinearModel)
 add_subdirectory(Localization)
