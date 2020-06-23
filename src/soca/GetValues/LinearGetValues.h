@@ -14,6 +14,7 @@
 
 #include "soca/Fortran.h"
 
+#include "oops/base/Variables.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -43,7 +44,7 @@ class LinearGetValues : public util::Printable,
   static const std::string classname() {return "soca::LinearGetValues";}
 
   ///  Constructor, destructor
-  LinearGetValues(const Geometry &, const ufo::Locations &);
+  LinearGetValues(const Geometry &, const ufo::Locations &, const oops::Variables &);
   virtual ~LinearGetValues();
 
   /// Trajectory for the linearized interpolation

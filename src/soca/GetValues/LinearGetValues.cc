@@ -22,7 +22,7 @@ namespace soca {
 /// Constructor, destructor
 // -----------------------------------------------------------------------------
 LinearGetValues::LinearGetValues(const Geometry & geom,
-                                 const ufo::Locations & locs)
+                                 const ufo::Locations & locs, const oops::Variables &)
   : locs_(locs), geom_(new Geometry(geom))
 {
   soca_getvalues_create_f90(keyLinearGetValues_,

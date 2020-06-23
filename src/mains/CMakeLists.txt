@@ -24,6 +24,11 @@ ecbuild_add_executable( TARGET  soca_hofx.x
                         LIBS    soca
                       )
 
+ecbuild_add_executable( TARGET  soca_coupledhofx.x
+                        SOURCES CoupledHofX.cc
+                        LIBS    soca
+                      )
+
 ecbuild_add_executable( TARGET  soca_enshofx.x
                         SOURCES EnsHofX.cc
                         LIBS    soca

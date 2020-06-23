@@ -86,6 +86,11 @@ link_libraries(${MPI_CXX_LIBRARIES} ${MPI_Fortran_LIBRARIES})
 # crtm
 ecbuild_use_package( PROJECT crtm VERSION 2.2.3 )
 
+# fv3-jedi for coupled H
+ecbuild_use_package( PROJECT fv3jedi )
+include_directories( ${FV3JEDI_INCLUDE_DIRS} )
+
+
 ################################################################################
 # Definitions
 ################################################################################
