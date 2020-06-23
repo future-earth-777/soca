@@ -7,7 +7,7 @@ list( APPEND soca_test_input
   testinput/addincrement.yml
   testinput/checkpointmodel.yml
   testinput/convertstate.yml
-  testinput/coupledhofx.yml
+  testinput/coupled_hofx_crtm.yml
   testinput/dirac_bump_cov.yml
   testinput/dirac_horizfilt.yml
   testinput/dirac_soca_cov.yml
@@ -60,7 +60,7 @@ list( APPEND soca_test_ref
   testref/addincrement.test
   testref/checkpointmodel.test
   testref/convertstate.test
-  testref/coupledhofx.test
+  testref/coupled_hofx_crtm.test
   testref/dirac_bump_cov.test
   testref/dirac_horizfilt.test
   testref/dirac_soca_cov.test
@@ -563,8 +563,8 @@ if( ${CRTM_FOUND} )
                 EXE  soca_hofx_nomodel.x
                 TEST_DEPENDS test_soca_gridgen )
 
- soca_add_test( NAME coupledhofx
-                EXE  soca_hofx_coupledhofx.x
+ soca_add_test( NAME coupled_hofx_crtm
+                EXE  soca_coupledhofx.x
                 TEST_DEPENDS test_soca_gridgen )
 
 endif()
