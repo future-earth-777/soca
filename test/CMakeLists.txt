@@ -29,6 +29,7 @@ list( APPEND soca_test_input
   testinput/gridgen.yml
   testinput/gridgen_small.yml
   testinput/hofx_3d.yml
+  testinput/hofx_3d_bgc.yml
   testinput/hofx_3dcrtm.yml
   testinput/hofx_4d.yml
   testinput/hofx_4d_pseudo.yml
@@ -80,6 +81,7 @@ list( APPEND soca_test_ref
   testref/forecast_mom6_bgc.test
   testref/forecast_pseudo.test
   testref/hofx_3d.test
+  testref/hofx_3d_bgc.test
   testref/hofx_3dcrtm.test
   testref/hofx_4d.test
   testref/hofx_4d_pseudo.test
@@ -130,6 +132,7 @@ list( APPEND soca_obs
   Data/Obs/sst.nc
   Data/Obs/gmi_gpm_geoval.nc
   Data/Obs/gmi_gpm_obs.nc
+  Data/Obs/chl.nc
 )
 
 # Create Data directory for test input/output and symlink all files
@@ -574,6 +577,10 @@ soca_add_test( NAME dirac_horizfilt
 
 # h(x) executables
 soca_add_test( NAME hofx_3d
+               EXE  soca_hofx_nomodel.x
+               TEST_DEPENDS test_soca_gridgen )
+
+soca_add_test( NAME hofx_3d_bgc
                EXE  soca_hofx_nomodel.x
                TEST_DEPENDS test_soca_gridgen )
 

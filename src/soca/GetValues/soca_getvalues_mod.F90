@@ -103,7 +103,10 @@ subroutine soca_getvalues_fillgeovals(self, geom, fld, t1, t2, locs, geovals)
   integer :: ns
   real(kind=kind_real), allocatable :: gom_window(:)
   real(kind=kind_real), allocatable :: fld3d(:,:,:), fld3d_un(:)
-  type(soca_field), pointer :: fldptr
+  type(soca_field), pointer :: fldptr, fldptr_h
+  real(kind=kind_real), allocatable :: chloc(:,:)
+  real ::  wcint, tmp_euz, euz
+  integer :: indx_i, indx_j
 
   ! Indices for compute domain (no halo)
   isc = geom%isc ; iec = geom%iec
@@ -169,6 +172,35 @@ subroutine soca_getvalues_fillgeovals(self, geom, fld, t1, t2, locs, geovals)
     case ("sea_area_fraction")
       fld3d(isc:iec,jsc:jec,1) = real(fld%geom%mask2d(isc:iec,jsc:jec),kind=kind_real)
       masked = .false.
+
+    case ("mass_concentration_of_chlorophyll_in_sea_water")
+      allocate(chloc(isc:iec,jsc:jec))
+      call fld%get("chl", fldptr)
+      call fld%get("hocn", fldptr_h)
+
+      ! estimate chlorophyll ocean color value (chloc) as the average over the euphotic
+      ! layer euz
+      do indx_i = isc, iec
+      do indx_j = jsc, jec
+         euz = 34.0 * fldptr%val(indx_i,indx_j,1) ** (-0.39)
+         tmp_euz = fldptr_h%val(indx_i,indx_j,1)
+         wcint = 0.0
+         do ival = 1, nval
+            if ((ival == 1) .or. (tmp_euz .lt. euz)) then !!{
+               if ((tmp_euz + fldptr_h%val(indx_i,indx_j,ival)) .lt. euz) then !{
+                  wcint = wcint + fldptr%val(indx_i,indx_j,ival) * fldptr_h%val(indx_i,indx_j,ival)
+                  tmp_euz = tmp_euz + fldptr_h%val(indx_i,indx_j,ival)
+               else
+                  wcint = wcint + fldptr%val(indx_i,indx_j,ival) * (euz - tmp_euz)
+                  tmp_euz = euz
+               endif !}
+            endif !!}
+         enddo 
+         chloc(indx_i,indx_j) = wcint  / tmp_euz
+      enddo
+      enddo
+
+      fld3d(isc:iec,jsc:jec,1) = chloc(isc:iec,jsc:jec)
 
     case default
       call fckit_log%debug("soca_interpfields_mod:interp geoval does not exist")
@@ -310,6 +342,12 @@ subroutine soca_getvalues_fillgeovals_ad(self, geom, incr, t1, t2, locs, geovals
         call incr%get("socn", field)
         field%val(isc:iec,jsc:jec,1) = field%val(isc:iec,jsc:jec,1) + incr3d(isc:iec,jsc:jec,1)
 
+      case ("mass_concentration_of_chlorophyll_in_sea_water")
+        call incr%get("chl", field)
+        ! here we need to apply incr3d (surface) back to the water colume
+        ! should we deal with it in soca/Increments or here?
+        field%val(isc:iec,jsc:jec,1) = field%val(isc:iec,jsc:jec,1) + incr3d(isc:iec,jsc:jec,1)
+
       case default
         call abor1_ftn("soca_interpfields_mod:getvalues_ad geoval does not exist")
 
@@ -353,7 +391,8 @@ function nlev_from_ufovar(fld, var) result(nval)
         "sea_area_fraction")
      nval = 1
 
-  case ("sea_water_salinity")
+  case ("sea_water_salinity", &
+        "mass_concentration_of_chlorophyll_in_sea_water")
      nval = fld%geom%nzo
 
   case default
