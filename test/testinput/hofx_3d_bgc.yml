@@ -107,6 +107,6 @@ Observations:
       simulate:
         variables: [mass_concentration_of_chlorophyll_in_sea_water]
     ObsOperator:
-      name: ChlOceanColor 
+      name: ChlEuzIntegr
     Covariance:
       covariance: diagonal
